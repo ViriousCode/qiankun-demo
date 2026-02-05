@@ -29,9 +29,16 @@ export default defineConfig({
     }),
   ],
   server: {
-      port: 6789,
-      origin: 'http://localhost:6789'
-    },
+    port: 6789,
+    origin: 'http://localhost:6789',
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3000', // 后端地址
+        changeOrigin: true,
+        // rewrite: (path) => path.replace(/^\/api/, '') // 如果后端路由没有 /api 前缀，就开启这行
+      }
+    }
+  },
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),

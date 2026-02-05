@@ -1,5 +1,8 @@
+// main-app/src/utils/request.ts
 import axios, { type AxiosInstance, type AxiosResponse } from 'axios'
-import { errorHandler } from './errorHandler'
+import { ElMessage } from 'element-plus'
+// 移除 errorHandler 引用，直接在这里处理简单错误即可
+// import { errorHandler } from './errorHandler' 
 import type { ApiResponse, RequestConfig } from './types'
 
 class Request {
@@ -8,7 +11,8 @@ class Request {
   constructor(config: RequestConfig) {
     this.instance = axios.create({
       timeout: 10000,
-      baseURL: import.meta.env.VITE_API_BASE,
+      // 【关键修改 1】指向 Node 服务地址
+      baseURL: import.meta.env.VITE_BASE_URL, 
       ...config
     })
 
@@ -16,12 +20,16 @@ class Request {
   }
 
   private setupInterceptors(): void {
-    // 请求拦截器 - 添加 token
+    // 请求拦截器
     this.instance.interceptors.request.use(
       (config) => {
-        const token = localStorage.getItem('token')
+        // 【关键修改 2】Token Key 统一为 'main-app-token'
+        const token = localStorage.getItem('main-app-token')
         if (token && config.headers) {
-          config.headers.Authorization = `Bearer ${token}`
+          // 注意：Node 服务端如果只是简单取 header，可能不需要 Bearer 前缀
+          // 但标准做法是加 Bearer，服务端需要对应解析 (req.headers['authorization'])
+          // 这里我们直接传 token 字符串，方便演示
+          config.headers.Authorization = token
         }
         return config
       },
@@ -30,36 +38,34 @@ class Request {
       }
     )
 
-    // 响应拦截器 - 统一错误处理
+    // 响应拦截器
     this.instance.interceptors.response.use(
-      (response: AxiosResponse<ApiResponse>) => {
+      (response: AxiosResponse<any>) => {
         const { data } = response
         
-        // 业务成功（code === 0 或 200，根据后端约定调整）
-        if (data.code === 0 || data.code === 200) {
-          return data.data // 直接返回业务数据
+        // 兼容处理：有些接口直接返回数据，有些返回 { code: 200, data: ... }
+        if (data.code === 200) {
+          return data.data 
         }
 
-        // 业务错误 - 抛出异常，由错误拦截器处理
-        const error = new Error(data.message) as any
-        error.response = { data }
-        error.isBusinessError = true
-        return Promise.reject(error)
+        // 业务错误
+        const msg = data.msg || data.message || '请求失败'
+        ElMessage.error(msg)
+        return Promise.reject(new Error(msg))
       },
       (error) => {
-        // 网络错误或 HTTP 错误
-        errorHandler.handle(error, error.config || {})
+        const msg = error.response?.data?.msg || error.message || '网络错误'
+        ElMessage.error(msg)
         return Promise.reject(error)
       }
     )
   }
 
-  // 核心请求方法
+  // 方法封装
   public request<T = any>(config: RequestConfig): Promise<T> {
     return this.instance.request(config)
   }
 
-  // 快捷方法
   public get<T = any>(url: string, config?: RequestConfig): Promise<T> {
     return this.request({ ...config, url, method: 'GET' })
   }
@@ -77,7 +83,5 @@ class Request {
   }
 }
 
-// 创建默认实例
-const request = new Request({})
-
-export default request
+// 导出单例
+export default new Request({})

@@ -1,62 +1,74 @@
 import { createApp } from 'vue';
-import { createPinia } from 'pinia';
-import { renderWithQiankun, qiankunWindow } from 'vite-plugin-qiankun/dist/helper';
-import { watch } from 'vue';
 import App from './App.vue';
 import router from './router';
-import { setupGlobalState } from '@/store/auth-listener';
+import { createPinia } from 'pinia';
+import { renderWithQiankun, qiankunWindow } from 'vite-plugin-qiankun/dist/helper';
+import { setupGlobalState } from '@/utils/auth-listener'; // 引入刚才修改的文件
 import { useUserStore } from '@/store/user';
+// 引入指令
+import { vPermission } from '@/directives/permission';
+import { vDebounce } from '@/directives/debounce';
+
+let app: any;
 
 function render(props: any = {}) {
   const { container } = props;
-  const app = createApp(App);
-  app.use(createPinia());
+  app = createApp(App);
+
+  // 1. 注册插件
+  const pinia = createPinia();
+  app.use(pinia);
   app.use(router);
-  app.mount(container ? container.querySelector('#app') : '#app');
-  return { app, router };
+
+  // 2. 注册指令
+  app.directive('permission', vPermission);
+  app.directive('debounce', vDebounce);
+
+  // 3. 初始化 Store 数据
+  const userStore = useUserStore();
+
+  // 【关键步骤 A】：先用 props 里的数据兜底初始化 (可能是旧的，但比没有强)
+  if (props.globalData?.auth?.permissions) {
+    userStore.permissions = props.globalData.auth.permissions;
+  }
+
+  if (props.globalData?.userInfo) {
+    userStore.userInfo = props.globalData.userInfo;
+  }
+
+  // 4. 启动权限监听 (不再传 props)
+  setupGlobalState(router);
+
+  // 5. 挂载应用
+  app.mount(container ? container.querySelector('#sub-app') : '#sub-app');
+
+  // 【关键步骤 B】：挂载完成后，大喊一声：“主应用，最新的权限发我一份！”
+  // 这能解决 props 数据陈旧的问题
+  if (qiankunWindow.__POWERED_BY_QIANKUN__) {
+    window.dispatchEvent(new Event('sub-app-ask-for-refresh'));
+  }
 }
 
-const initQiankun = () => {
-  renderWithQiankun({
-    mount(props) {
-      console.log('[子应用] Mount');
-      const { router: routerInstance } = render(props);
-      
-      // 1. 启动权限监听
-      setupGlobalState(props, routerInstance);
-
-      // 2. 监听 Store 变化，上报菜单
-      const userStore = useUserStore();
-      watch(
-        () => userStore.dynamicMenus,
-        (menus) => {
-          if (menus.length > 0 && props.setMenus) {
-            // 包装成侧边栏需要的格式
-            const sidebarMenu = [{
-              path: 'sub-order', // 唯一ID
-              meta: { title: '订单系统(子)', icon: 'Shop' },
-              children: menus // 过滤后的页面
-            }];
-            props.setMenus(sidebarMenu);
-          }
-        },
-        { immediate: true }
-      );
-    },
-    bootstrap() { console.log('[子应用] Bootstrap'); },
-    update(newProps) {
-      console.log('[子应用] update', newProps);
-    },
-    unmount(props) {
-      console.log('[子应用] Unmount');
-      const { container } = props;
-      if (container) container.innerHTML = ''; // 清理 DOM
+renderWithQiankun({
+  mount(props) {
+    console.log('[子应用] Mount');
+    render(props);
+  },
+  bootstrap() {
+    console.log('[子应用] Bootstrap');
+  },
+  unmount(props: any) {
+    console.log('[子应用] Unmount');
+    if (app) {
+      app.unmount();
+      app = null;
     }
-  });
-};
+  },
+  update(props: any) {
+    console.log('[子应用] Update');
+  },
+});
 
 if (!qiankunWindow.__POWERED_BY_QIANKUN__) {
   render();
-} else {
-  initQiankun();
 }

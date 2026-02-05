@@ -67,4 +67,16 @@ router.beforeEach((to, from, next) => {
   }
 });
 
+router.afterEach((to) => {
+  // 1. 判断是否进入了子应用路径 (假设子应用前缀是 /sub-app)
+  if (to.path.startsWith('/sub-app')) {
+    // 2. 派发自定义事件，携带最新的路径
+    window.dispatchEvent(
+      new CustomEvent('micro-app-route-change', {
+        detail: { path: to.path }
+      })
+    );
+  }
+});
+
 export default router;

@@ -51,6 +51,13 @@ export default defineConfig(({ mode }) => {
       origin: 'http://localhost:5179',
       headers: {
         'Access-Control-Allow-Origin': '*'
+      },
+      proxy: {
+        '/api': {
+          target: 'http://localhost:3000', // 后端地址
+          changeOrigin: true,
+          // rewrite: (path) => path.replace(/^\/api/, '') // 如果后端路由没有 /api 前缀，就开启这行
+        }
       }
     },
     resolve: {

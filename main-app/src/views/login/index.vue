@@ -5,44 +5,23 @@
         <img src="https://element-plus.org/images/element-plus-logo.svg" alt="logo" class="logo">
         <h2 class="title">微前端主基座</h2>
       </div>
-      
-      <el-form 
-        ref="loginFormRef"
-        :model="loginForm"
-        :rules="loginRules"
-        class="login-form"
-        size="large"
-      >
+
+      <el-form ref="loginFormRef" :model="loginForm" :rules="loginRules" class="login-form" size="large">
         <el-form-item prop="username">
-          <el-input 
-            v-model="loginForm.username" 
-            placeholder="用户名: admin"
-            prefix-icon="User"
-          />
+          <el-input v-model="loginForm.username" placeholder="用户名: admin" prefix-icon="User" />
         </el-form-item>
-        
+
         <el-form-item prop="password">
-          <el-input 
-            v-model="loginForm.password" 
-            type="password" 
-            placeholder="密码: 任意字符"
-            prefix-icon="Lock"
-            show-password
-            @keyup.enter="handleLogin"
-          />
+          <el-input v-model="loginForm.password" type="password" placeholder="密码: 任意字符" prefix-icon="Lock" show-password
+            @keyup.enter="handleLogin" />
         </el-form-item>
 
         <el-form-item>
-          <el-button 
-            type="primary" 
-            :loading="loading" 
-            class="login-btn" 
-            @click="handleLogin"
-          >
+          <el-button type="primary" :loading="loading" class="login-btn" @click="handleLogin">
             {{ loading ? '登录中...' : '登 录' }}
           </el-button>
         </el-form-item>
-        
+
         <div class="tips">
           <span>提示: 用户名输入 admin 可模拟管理员权限</span>
         </div>
@@ -76,8 +55,8 @@ const loginRules = reactive<FormRules>({
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
 });
+// main-app/src/views/login/index.vue
 
-// 登录处理函数
 const handleLogin = async () => {
   if (!loginFormRef.value) return;
   
@@ -85,12 +64,20 @@ const handleLogin = async () => {
     if (valid) {
       loading.value = true;
       try {
-        // 调用 Store 中的登录 Action (这里会触发 setTimeout 模拟接口)
-        await userStore.login();
+        // 1. 获取 Token
+        await userStore.login({
+          username: loginForm.username,
+          password: loginForm.password
+        });
         
-        ElMessage.success('登录成功，正在加载权限...');
+        // 【✨ 优化点 ✨】
+        // 主动在这里等待权限返回，而不是交给路由守卫去“悄悄”加载。
+        // 这样 Loading 动画会一直持续，用户就知道系统还在处理中。
+        await userStore.getUserInfo(); 
         
-        // 登录成功后跳转到 Dashboard
+        ElMessage.success('登录成功');
+        
+        // 2. 权限到位了，跳转会非常快（守卫会直接放行）
         router.push('/dashboard');
       } catch (error) {
         console.error(error);

@@ -12,6 +12,6 @@
   padding: 20px;
   /* 可以加点背景色方便调试，看看是不是渲染了 */
   background-color: #f5f7fa; 
-  min-height: 100vh;
+  min-height: 100%;
 }
 </style>

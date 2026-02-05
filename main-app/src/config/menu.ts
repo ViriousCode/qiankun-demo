@@ -16,13 +16,13 @@ export const globalMenuConfig: MenuItem[] = [
     permission: 'main:dashboard'
   },
   {
-    path: '/sub-app', // 一级菜单路径
+    path: '/sub-app',
     title: '订单系统',
     icon: 'Shop',
-    permission: 'sub:order:list', // 只要有列表权限，就显示这个父菜单
+    permission: 'sub:order:list',
     children: [
       {
-        path: '/sub-app/testView1', // 注意：路径要写全 /sub-app/xxx
+        path: '/sub-app/testView1',
         title: '订单列表',
         permission: 'sub:order:list'
       },
@@ -30,6 +30,19 @@ export const globalMenuConfig: MenuItem[] = [
         path: '/sub-app/testView2',
         title: '订单详情',
         permission: 'sub:order:detail'
+      }
+    ]
+  },
+  {
+    path: '/system', // 虚拟路径，用于分组
+    title: '系统管理',
+    icon: 'Setting', // 使用 Setting 图标
+    permission: 'sub:setting',
+    children: [
+      {
+        path: '/sub-app/role', // 对应子应用的 /role 路由
+        title: '角色管理',
+        permission: 'sub:role:list'
       }
     ]
   }

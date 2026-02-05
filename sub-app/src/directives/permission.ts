@@ -1,28 +1,47 @@
-import { watchEffect } from 'vue';
-import type { Directive } from 'vue';
 import { useUserStore } from '@/store/user';
+import { watch } from 'vue';
+import type { Directive, DirectiveBinding } from 'vue';
 
-export const permission: Directive = {
-  // mounted 钩子处理首次加载
-  mounted(el: HTMLElement, binding) {
-    const { value } = binding; // 获取 v-permission="'user:add'" 中的值
-    const authStore = useUserStore();
+export const vPermission: Directive = {
+  mounted(el: HTMLElement, binding: DirectiveBinding) {
+    const { value } = binding;
+    const userStore = useUserStore();
+    const all_permission = "*:*:*";
 
-    // 逻辑封装：根据权限决定是否渲染
-    const checkPermission = () => {
-      const hasAuth = authStore.permissions.includes(value);
+    const updateDisplay = () => {
+      const perms = userStore.permissions || [];
+      // 【调试日志】打开控制台，确认这个日志打印了，且 perms 里确实没有该权限
+      // console.log(`[指令检查] 目标权限: ${value} | 当前持有:`, perms);
 
-      if (!hasAuth) {
-        // 如果没有权限，直接从 DOM 树中移除
-        el.parentNode?.removeChild(el);
+      let hasPermission = false;
+      if (value && value instanceof Array && value.length > 0) {
+        hasPermission = perms.some((perm) => {
+          return perm === all_permission || value.includes(perm);
+        });
+      } else if (value && typeof value === 'string') {
+        hasPermission = perms.includes(value) || perms.includes(all_permission);
+      }
+
+      if (!hasPermission) {
+        // 【核心修改】使用 setProperty 加上 !important，防止被其他样式覆盖
+        el.style.setProperty('display', 'none', 'important');
+      } else {
+        // 恢复显示时，清空 display 属性，让它回退到 CSS 定义的默认值 (block/flex/inline)
+        el.style.removeProperty('display');
       }
     };
 
-    // 第一次执行
-    checkPermission();
+    // 监听 store 变化
+    const stopWatch = watch(
+      () => userStore.permissions, 
+      updateDisplay, 
+      { immediate: true, deep: true }
+    );
 
-    // [可选] 如果权限是动态变化的，可以监听 authStore 的变化
-    // 注意：一旦 el 被 removeChild 移除，该指令实例通常随之销毁
-    // 如果需要频繁切换显示隐藏，建议使用 v-if 或配合 CSS display: none
+    (el as any)._stopWatch = stopWatch;
+  },
+
+  unmounted(el: HTMLElement) {
+    if ((el as any)._stopWatch) (el as any)._stopWatch();
   }
 };

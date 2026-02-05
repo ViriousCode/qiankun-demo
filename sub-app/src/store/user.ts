@@ -3,9 +3,9 @@ import { ref } from 'vue';
 import type { RouteRecordRaw } from 'vue-router';
 
 export const useUserStore = defineStore('user', () => {
+  const token = ref<string>('');
   const permissions = ref<string[]>([]);
-  const userInfo = ref({ name: '', role: '' });
-
+  const userInfo = ref({ name: '', role: '', roleId: '' });
   const setPermissions = (perms: string[]) => {
     permissions.value = perms;
   };
@@ -15,6 +15,7 @@ export const useUserStore = defineStore('user', () => {
   };
 
   return {
+    token,
     permissions,
     userInfo,
     dynamicMenus,

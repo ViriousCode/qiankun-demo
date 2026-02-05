@@ -10,7 +10,10 @@ import '@/utils/permission'; // 引入守卫文件
 
 import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
+import 'element-plus/theme-chalk/dark/css-vars.css'
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
+
+import { vDebounce } from '@/directives/debounce';
 
 const app = createApp(App);
 //----------------- pinia -----------------//
@@ -19,6 +22,7 @@ app.use(pinia);
 
 app.use(router);
 // setupRouteGuard(router);
+app.directive('debounce', vDebounce);
 
 app.use(ElementPlus, {
   locale: zhCn,  // 设置语言

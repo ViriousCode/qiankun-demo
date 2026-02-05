@@ -5,7 +5,7 @@ import { qiankunWindow } from 'vite-plugin-qiankun/dist/helper';
 const router = createRouter({
   // 【关键】：强制指定 /sub-app/，防止 URL 解析错误
   history: createWebHistory(
-    qiankunWindow.__POWERED_BY_QIANKUN__ ? '/sub-app/' : '/'
+    qiankunWindow.__POWERED_BY_QIANKUN__ ? '/sub-app' : '/'
   ),
   routes: constantRoutes
 });
