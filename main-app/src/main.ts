@@ -1,0 +1,31 @@
+import { createApp } from 'vue'
+import './style.css'
+import App from './App.vue'
+
+import router from './router';
+// import { setupRouteGuard } from './router/guard';
+import { createPinia } from 'pinia'
+
+import '@/utils/permission'; // 引入守卫文件
+
+import ElementPlus from 'element-plus'
+import 'element-plus/dist/index.css'
+import zhCn from 'element-plus/es/locale/lang/zh-cn'
+
+const app = createApp(App);
+//----------------- pinia -----------------//
+const pinia = createPinia();
+app.use(pinia);
+
+app.use(router);
+// setupRouteGuard(router);
+
+app.use(ElementPlus, {
+  locale: zhCn,  // 设置语言
+  // 其他全局配置
+  size: 'default',  // 组件尺寸: large | default | small
+  zIndex: 2000,     // 弹窗初始 z-index
+})
+app.mount('#app');
+
+
