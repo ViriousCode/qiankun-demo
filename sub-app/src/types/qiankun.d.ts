@@ -25,3 +25,16 @@ export interface CesiumResourceConfig {
   retryAttempts?: number;
   retryDelay?: number;
 }
+
+export interface QiankunGlobalState {
+  token?: string;
+  user?: {
+    name: string;
+    role?: string;
+    roleId?: string;
+    [key: string]: any;
+  };
+  permissions?: string[]; // 权限列表
+  menus?: any[];          // 如果主应用下发菜单的话
+  [key: string]: any;     // 允许其他任意属性
+}

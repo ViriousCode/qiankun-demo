@@ -1,53 +1,51 @@
 // main-app/src/store/user.ts
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import { globalMenuConfig, type MenuItem } from '@/config/menu';
-// 【引入真实 API】
 import { loginApi, getUserInfoApi } from '@/api/user';
-
-// 递归过滤菜单函数 (保持不变)
-const filterMenus = (menus: MenuItem[], perms: string[]): MenuItem[] => {
-  const res: MenuItem[] = [];
-  menus.forEach(menu => {
-    if (menu.children) {
-      menu.children = filterMenus(menu.children, perms);
-    }
-    const hasAuth = !menu.permission || perms.includes(menu.permission);
-    if (hasAuth || (menu.children && menu.children.length > 0)) {
-      res.push(menu);
-    }
-  });
-  return res;
-};
+import { usePermissionStore } from './permission';
+import { setSharedState } from '@/micro/shared'; // 引入自定义的通信方法
 
 export const useUserStore = defineStore('user', () => {
-  // 从 localStorage 初始化 Token
+  const permissionStore = usePermissionStore();
   const token = ref(localStorage.getItem('main-app-token') || '');
   const permissions = ref<string[]>([]);
-  const menus = ref<MenuItem[]>([]);
   const userName = ref('');
   const roleId = ref('');
 
-  // 1. 登录动作
+  // 辅助函数：同步状态到子应用
+  const syncToSubApp = () => {
+    const currentMenus = permissionStore.menus;
+    setSharedState({
+      token: token.value,
+      user: {
+        name: userName.value,
+        roleId: roleId.value
+      },
+      permissions: permissions.value,
+      menus: currentMenus
+    });
+  };
+
+  // 1. 登录
   const login = async (loginForm: { username: string; password: string }) => {
-    // 调用真实接口
     const data = await loginApi(loginForm);
     token.value = data.token;
     localStorage.setItem('main-app-token', data.token);
+
+    // 登录成功，同步 Token
+    syncToSubApp();
   };
 
-  // 2. 获取用户信息动作
+  // 2. 获取用户信息
   const getUserInfo = async () => {
     try {
-      // 调用真实接口 (axios 拦截器会自动带上 token)
       const data = await getUserInfoApi();
-
       permissions.value = data.permissions;
       userName.value = data.userName;
       roleId.value = data.roleId;
 
-      // 根据后端返回的权限，计算菜单
-      menus.value = filterMenus(JSON.parse(JSON.stringify(globalMenuConfig)), data.permissions);
+      // 获取完信息，同步完整状态
+      syncToSubApp();
 
       return data;
     } catch (error) {
@@ -58,12 +56,22 @@ export const useUserStore = defineStore('user', () => {
 
   // 3. 重置/登出
   const reset = () => {
+    const permissionStore = usePermissionStore();
     token.value = '';
     permissions.value = [];
-    menus.value = [];
     userName.value = '';
     localStorage.removeItem('main-app-token');
+
+    // 重置主应用菜单
+    permissionStore.reset();
+
+    // 通知子应用清空
+    setSharedState({
+      token: '',
+      user: null,
+      permissions: []
+    });
   };
 
-  return { token, permissions, menus, userName, roleId, login, getUserInfo, reset };
+  return { token, permissions, userName, roleId, login, getUserInfo, reset };
 });

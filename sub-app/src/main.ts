@@ -3,8 +3,7 @@ import App from './App.vue';
 import router from './router';
 import { createPinia } from 'pinia';
 import { renderWithQiankun, qiankunWindow } from 'vite-plugin-qiankun/dist/helper';
-import { setupGlobalState } from '@/utils/auth-listener'; // 引入刚才修改的文件
-import { useUserStore } from '@/store/user';
+import { initAuthListener } from '@/utils/auth-listener'; // 引入刚才修改的文件
 // 引入指令
 import { vPermission } from '@/directives/permission';
 import { vDebounce } from '@/directives/debounce';
@@ -24,20 +23,7 @@ function render(props: any = {}) {
   app.directive('permission', vPermission);
   app.directive('debounce', vDebounce);
 
-  // 3. 初始化 Store 数据
-  const userStore = useUserStore();
-
-  // 【关键步骤 A】：先用 props 里的数据兜底初始化 (可能是旧的，但比没有强)
-  if (props.globalData?.auth?.permissions) {
-    userStore.permissions = props.globalData.auth.permissions;
-  }
-
-  if (props.globalData?.userInfo) {
-    userStore.userInfo = props.globalData.userInfo;
-  }
-
-  // 4. 启动权限监听 (不再传 props)
-  setupGlobalState(router);
+  initAuthListener(props, router)
 
   // 5. 挂载应用
   app.mount(container ? container.querySelector('#sub-app') : '#sub-app');

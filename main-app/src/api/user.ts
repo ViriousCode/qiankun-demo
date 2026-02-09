@@ -6,10 +6,11 @@ export const loginApi = (data: { username: string; password: string }) => {
 }
 
 // 获取用户信息接口
+interface UserInfo { 
+  userName: string; 
+  roleId: string; 
+  permissions: string[] 
+}
 export const getUserInfoApi = () => {
-  return request.get<{ 
-    userName: string; 
-    roleId: string; 
-    permissions: string[] 
-  }>('/api/user/info')
+  return request.get<UserInfo>('/api/user/info')
 }

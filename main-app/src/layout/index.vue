@@ -11,26 +11,11 @@
       <el-scrollbar>
         <el-menu router :default-active="$route.path" :collapse="isCollapse" background-color="#304156"
           text-color="#bfcbd9" active-text-color="#409EFF" :unique-opened="true" class="el-menu-vertical">
-          <template v-for="menu in userStore.menus" :key="menu.path">
-            <el-sub-menu v-if="menu.children && menu.children.length > 0" :index="menu.path">
-              <template #title>
-                <el-icon v-if="menu.icon">
-                  <component :is="menu.icon" />
-                </el-icon>
-                <span>{{ menu.title }}</span>
-              </template>
-              <el-menu-item v-for="child in menu.children" :key="child.path" :index="child.path">
-                <template #title><span>{{ child.title }}</span></template>
-              </el-menu-item>
-            </el-sub-menu>
-
-            <el-menu-item v-else :index="menu.path">
-              <el-icon v-if="menu.icon">
-                <component :is="menu.icon" />
-              </el-icon>
-              <template #title><span>{{ menu.title }}</span></template>
-            </el-menu-item>
-          </template>
+          <sidebar-item 
+            v-for="menu in permissionStore.menus" 
+            :key="menu.path" 
+            :item="menu" 
+          />
         </el-menu>
       </el-scrollbar>
     </div>
@@ -86,17 +71,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+// import { ref, onMounted } from 'vue';
+// import { useRouter } from 'vue-router';
 import { useUserStore } from '@/store/user';
+import { usePermissionStore } from '@/store/permission';
 import { initQiankun } from '@/micro';
-import { ElMessageBox, ElMessage } from 'element-plus';
+import SidebarItem from './components/SidebarItem.vue'; // 假设放在同一目录的 components 文件夹下
+// import { ElMessageBox, ElMessage } from 'element-plus';
 // 引入图标
 import {
   Platform, Expand, Fold, Moon, Sunny, CaretBottom, UserFilled
 } from '@element-plus/icons-vue';
 
 const userStore = useUserStore();
+const permissionStore = usePermissionStore();
 const router = useRouter();
 const isCollapse = ref(false);
 
@@ -163,6 +151,7 @@ const handleLogout = () => {
   }).then(async () => {
     // 1. 清理 Store 和 LocalStorage
     userStore.reset();
+    permissionStore.reset();
     // 2. 跳转登录页
     window.location.href = '/login'
     ElMessage.success('退出成功');

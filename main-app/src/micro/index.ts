@@ -1,29 +1,17 @@
+// main-app/src/micro/index.ts
 import { registerMicroApps, start } from 'qiankun';
-import { useUserStore } from '@/store/user';
+import { sharedProps } from './shared'; // [!code ++]
 
+const apps = [
+  {
+    name: 'sub-app',
+    entry: import.meta.env.VITE_QIAANKUN_ENTRY_SUB_APP,
+    container: '#sub-app-container',
+    activeRule: '/sub-app',
+    props: { ...sharedProps } // [!code ++] 将自定义的状态管理方法传给子应用
+  }
+];
 export const initQiankun = () => {
-  const userStore = useUserStore();
-
-  registerMicroApps([
-    {
-      name: 'sub-app',
-      entry: 'http://localhost:5179',
-      container: '#sub-app-container',
-      activeRule: '/sub-app',
-      props: {
-        globalData: {
-          auth: {
-            permissions: userStore.permissions,
-            token: userStore.token,
-          },
-          userInfo:{
-              userName: userStore.userName,
-              roleId: userStore.roleId
-            }
-        }
-      }
-    }
-  ]);
-
+  registerMicroApps(apps);
   start();
-};
+}

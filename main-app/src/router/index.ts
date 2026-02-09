@@ -20,7 +20,28 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/dashboard/index.vue'),
         meta: { title: '控制台' }
       },
-       {
+      {
+        path: 'system',
+        name: 'System',
+        meta: { title: '系统管理' },
+        // 可以选择使用空 Layout 或直接 Component: undefined (如果只是目录)
+        // 这里为了简单，假设它是一个嵌套路由的父级，不需要特定 Component
+        children: [
+          {
+            path: 'menu',
+            name: 'MenuManage',
+            component: () => import('@/views/system/menu/index.vue'),
+            meta: { title: '菜单管理' }
+          },
+          {
+            path: 'role',
+            name: 'RoleManage',
+            component: () => import('@/views/system/role/index.vue'),
+            meta: { title: '角色管理' }
+          }
+        ]
+      },
+      {
         path: '403',
         name: '403',
         component: () => import('@/views/error/403.vue'),
