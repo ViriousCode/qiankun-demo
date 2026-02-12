@@ -10,6 +10,8 @@ export interface Menu {
   permission?: string;
   type?: 'directory' | 'menu' | 'button';
   app?: string;
+  name?: string;
+  menuName?: string;
   children?: Menu[];
 }
 

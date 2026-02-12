@@ -20,11 +20,11 @@ const handleMicroRouteChange = (event: Event) => {
   const detail = (event as CustomEvent).detail;
   if (!detail || !detail.path) return;
 
-  const fullPath = detail.path; // e.g., "/sub-app/testView2"
+  const fullPath = detail.path; // e.g., "/test-sub-app/testView2"
 
   // 2. 掐头去尾，算出子应用内部路径
-  // 假设 activeRule 是 "/sub-app"，需要把它去掉
-  const targetPath = fullPath.replace('/sub-app', '') || '/';
+  // 假设 activeRule 是 "/test-sub-app"，需要把它去掉
+  const targetPath = fullPath.replace('/test-sub-app', '') || '/';
 
   // 3. 如果当前路径不对，就跳过去
   if (route.path !== targetPath) {

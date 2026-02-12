@@ -15,7 +15,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd());
   const plugins = [
     vue(),
-    qiankun('sub-app', {
+    qiankun('test-sub-app', {
       useDevMode: true
     }),
     AutoImport({
@@ -41,7 +41,7 @@ export default defineConfig(({ mode }) => {
     plugins.push(vueDevTools());
   }
   return {
-    base: '/sub-app/',
+    base: '/test-sub-app/',
     plugins,
     server: {
       port: 5179,

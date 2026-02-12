@@ -1,6 +1,6 @@
 <template>
   <div class="dashboard">
-    <h3>欢迎回来, {{ userStore.userName }}</h3>
+    <h3>欢迎回来, {{ userStore.userInfo?.userName }}</h3>
     <div class="cards">
       <div class="card">权限总数: {{ userStore.permissions.length }}</div>
     </div>

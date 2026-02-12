@@ -1,72 +1,139 @@
 // sub-app/src/store/permission.ts
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import { getMenuList, type Menu } from '@/api/menu'; // 确保你有这个API定义
+import router from '@/router';
+import { getMenuList } from '@/api/menu';
 import { useUserStore } from './user';
+import { qiankunWindow } from 'vite-plugin-qiankun/dist/helper'; // 引入乾坤环境变量
 
-// 复用相同的过滤逻辑
-const filterMenus = (menus: Menu[], perms: string[]): Menu[] => {
-  const res: Menu[] = [];
-  menus.forEach(menu => {
-    const tmp = { ...menu };
-    if (tmp.children) {
-      tmp.children = filterMenus(tmp.children, perms);
-    }
-    const hasPermission = !tmp.permission || perms.includes(tmp.permission);
+const modules = import.meta.glob('../views/**/*.vue');
 
-    // 只要自身有权限，或者子节点有内容，就保留
-    if (hasPermission || (tmp.children && tmp.children.length > 0)) {
-      // 剔除空目录
-      if (tmp.type === 'directory' && (!tmp.children || tmp.children.length === 0)) {
-        return;
-      }
-      res.push(tmp);
-    }
-  });
-  return res;
-};
+// 🚨 【核心修复 1】：建立无视大小写的 Vue 文件映射表！
+// 彻底解决路径是小写，但本地文件夹大写导致的映射失败问题
+const lowerCaseModulesMap: Record<string, any> = {};
+Object.keys(modules).forEach(key => {
+  lowerCaseModulesMap[key.toLowerCase()] = modules[key];
+});
 
 export const usePermissionStore = defineStore('permission', () => {
-  const menus = ref<Menu[]>([]);
+  const menus = ref<any[]>([]);
+  const isRoutesLoaded = ref(false);
+  const subAppPrefix = '/test-sub-app';
 
-  // sub-app/src/store/permission.ts
+  // 【核心修复 2】：双保险提取子应用菜单 (判断 app标识 或者 路径前缀)
+  const extractMyMenus = (tree: any[]): any[] => {
+    const res: any[] = [];
+    tree.forEach(item => {
+      const isMyApp = item.app === 'test-sub-app';
+      const isMyPath = item.path && item.path.startsWith(subAppPrefix);
 
-  const setMenus = (rawMenus: any[]) => {
-    // 假设主应用发来的是全量菜单，我们需要找到属于当前子应用的部分
-    // 方式1：通过路径匹配
-    const subAppPrefix = '/sub-app';
+      // 只要满足其一，就认定是属于本子应用的菜单
+      if (isMyApp || isMyPath) {
+        res.push(item);
+      } else if (item.children && item.children.length > 0) {
+        res.push(...extractMyMenus(item.children));
+      }
+    });
+    return res;
+  };
 
-    // 递归处理菜单，确保路径正确
-    const fixPaths = (items: any[]) => {
-      return items.map(item => {
-        const newItem = { ...item };
-        // 如果路径包含前缀，去掉它，以便子应用 router 能匹配
-        // (前提是子应用内的 router 定义是不带 /sub-app 的)
-        if (newItem.path && newItem.path.startsWith(subAppPrefix)) {
-          newItem.path = newItem.path.replace(subAppPrefix, '');
-          // 保证以 / 开头
-          if (!newItem.path.startsWith('/')) newItem.path = '/' + newItem.path;
+  const generateRoutes = (rawMenus: any[]) => {
+    console.log('--- 🚀 [子应用动态路由调试] 开始 ---');
+    let myMenus = extractMyMenus(rawMenus);
+
+    // 【核心修复 3】：取消乾坤环境下的全量兜底！
+    // 只有在独立运行时 (没被乾坤包裹)，没匹配到才全量渲染
+    if (myMenus.length === 0 && !qiankunWindow.__POWERED_BY_QIANKUN__) {
+      myMenus = rawMenus;
+    }
+    console.log('2. 提取出属于本子应用的菜单:', myMenus);
+
+    const processRoutes = (menuList: any[]) => {
+      const result: any[] = [];
+      menuList.forEach(item => {
+        if (item.type === 'button') return;
+
+        let innerPath = item.path || '';
+        if (innerPath.startsWith(subAppPrefix)) {
+          innerPath = innerPath.replace(subAppPrefix, '');
         }
-        if (newItem.children) newItem.children = fixPaths(newItem.children);
-        return newItem;
+        if (!innerPath.startsWith('/')) innerPath = '/' + innerPath;
+
+        const routeObj: any = {
+          path: innerPath,
+          name: item.name || innerPath.replace(/^\//, '').replace(/\//g, '-'),
+          meta: item.meta || {},
+          children: []
+        };
+
+        if (item.children && item.children.length > 0) {
+          routeObj.children = processRoutes(item.children);
+        }
+
+        if (innerPath && innerPath !== '/') {
+          const safePath = innerPath.startsWith('/') ? innerPath : `/${innerPath}`;
+          const indexPath = `../views${safePath}/index.vue`;
+          const directPath = `../views${safePath}.vue`;
+          
+          // 使用全小写去匹配，再也不怕文件夹大小写写错了！
+          const lowerIndexPath = indexPath.toLowerCase();
+          const lowerDirectPath = directPath.toLowerCase();
+          
+          if (lowerCaseModulesMap[lowerIndexPath]) {
+            routeObj.component = lowerCaseModulesMap[lowerIndexPath];
+            console.log(`✅ 映射成功: ${safePath} => ${lowerIndexPath}`);
+          } else if (lowerCaseModulesMap[lowerDirectPath]) {
+            routeObj.component = lowerCaseModulesMap[lowerDirectPath];
+            console.log(`✅ 映射成功: ${safePath} => ${lowerDirectPath}`);
+          } else {
+            console.error(`❌ 映射失败! 物理文件真的不存在: ${indexPath} 或 ${directPath}`);
+          }
+        }
+        
+        result.push(routeObj);
       });
+      return result;
     };
 
-    // 1. 尝试在树中找到子应用根节点
-    let myMenus = rawMenus;
-    const rootNode = rawMenus.find(m => m.path === subAppPrefix);
-    if (rootNode && rootNode.children) {
-      myMenus = rootNode.children;
+    menus.value = processRoutes(myMenus);
+
+    const flatRoutes: any[] = [];
+    const generateFlatRoutes = (routeTree: any[]) => {
+      routeTree.forEach(item => {
+        if (item.children && item.children.length > 0) {
+          generateFlatRoutes(item.children);
+        }
+        if (item.component) {
+          flatRoutes.push(item);
+        }
+      });
+    };
+    generateFlatRoutes(menus.value);
+    
+    console.log('3. 最终成功挂载到 Router 的有效业务页面:', flatRoutes);
+
+    flatRoutes.forEach(routeObj => {
+      router.addRoute('LayoutRoot', routeObj);
+    });
+
+    // if (router.currentRoute.value.path === '/' && flatRoutes.length > 0) {
+    //   router.replace(flatRoutes[0].path);
+    // }
+    const realBrowserPath = window.location.pathname;
+    const isAtRoot = realBrowserPath === subAppPrefix || realBrowserPath === `${subAppPrefix}/`;
+    
+    if (isAtRoot && flatRoutes.length > 0) {
+      router.replace(flatRoutes[0].path);
     }
 
-    // 2. 修正路径
-    menus.value = fixPaths(myMenus);
-    console.log('[子应用] 菜单已更新', menus.value);
+    isRoutesLoaded.value = true;
+    console.log('--- 🏁 [子应用动态路由调试] 结束 ---');
   };
 
   const reset = () => {
     menus.value = [];
+    isRoutesLoaded.value = false;
   };
 
-  return { menus, setMenus, reset };
+  return { menus, isRoutesLoaded, generateRoutes, reset };
 });

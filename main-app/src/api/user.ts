@@ -9,6 +9,9 @@ export const loginApi = (data: { username: string; password: string }) => {
 interface UserInfo { 
   userName: string; 
   roleId: string; 
+  roleKey: string; 
+  avatar?:string
+  nickName?:string
   permissions: string[] 
 }
 export const getUserInfoApi = () => {

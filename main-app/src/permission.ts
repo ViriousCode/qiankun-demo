@@ -2,7 +2,8 @@ import router from '@/router';
 import { useUserStore } from '@/store/user';
 import { usePermissionStore } from '@/store/permission';
 
-const whiteList = ['/login', '/404']; // 白名单
+// 登录白名单
+const whiteList = ['/login'];
 
 router.beforeEach(async (to, from, next) => {
   const userStore = useUserStore();
@@ -12,25 +13,24 @@ router.beforeEach(async (to, from, next) => {
     if (to.path === '/login') {
       next({ path: '/' });
     } else {
-      // 核心判断：如果已经登录，但菜单还没生成 (isRoutesLoaded 为 false)
+      // 如果还没加载过动态路由
       if (!permissionStore.isRoutesLoaded) {
         try {
-          // 1. 获取用户信息 (如果没有的话)
-          if (!userStore.roleId) {
-            await userStore.getUserInfo();
-          }
+          if (!userStore.roleId) await userStore.getUserInfo();
           
-          // 2. [这里调用] 生成菜单
+          // 获取并动态注入路由
           await permissionStore.generateMenus();
           
-          // 3. 继续跳转 (replace: true 确保路由加载完整)
+          // replace: true 确保路由完整替换，触发重新解析
           next({ ...to, replace: true });
         } catch (error) {
-          // 出错需重置并回登录页
           userStore.reset();
           next(`/login?redirect=${to.path}`);
         }
       } else {
+        // 路由已加载，直接放行！
+        // 如果用户在地址栏手动输入无权限的路径：
+        // 因为动态路由里没挂载它，Vue Router 会自动将它匹配到我们在 store 里最后注入的 NotFound 路由，完美隔离！
         next();
       }
     }

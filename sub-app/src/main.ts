@@ -1,12 +1,17 @@
+// sub-app/src/main.ts
 import { createApp } from 'vue';
 import App from './App.vue';
 import router from './router';
 import { createPinia } from 'pinia';
 import { renderWithQiankun, qiankunWindow } from 'vite-plugin-qiankun/dist/helper';
-import { initAuthListener } from '@/utils/auth-listener'; // 引入刚才修改的文件
+
+// 清除监听器的方法
+import { initAuthListener, clearAuthListener } from '@/utils/auth-listener'; 
 // 引入指令
 import { vPermission } from '@/directives/permission';
 import { vDebounce } from '@/directives/debounce';
+
+import '@/router/permission'
 
 let app: any;
 
@@ -23,15 +28,15 @@ function render(props: any = {}) {
   app.directive('permission', vPermission);
   app.directive('debounce', vDebounce);
 
-  initAuthListener(props, router)
+  // 3. 初始化鉴权及数据监听
+  initAuthListener(props, router);
 
-  // 5. 挂载应用
-  app.mount(container ? container.querySelector('#sub-app') : '#sub-app');
+  // 4. 挂载应用
+  app.mount(container ? container.querySelector('#test-sub-app') : '#test-sub-app');
 
-  // 【关键步骤 B】：挂载完成后，大喊一声：“主应用，最新的权限发我一份！”
-  // 这能解决 props 数据陈旧的问题
+  // 5. 挂载完成后向主应用请求最新数据
   if (qiankunWindow.__POWERED_BY_QIANKUN__) {
-    window.dispatchEvent(new Event('sub-app-ask-for-refresh'));
+    window.dispatchEvent(new Event('test-sub-app-ask-for-refresh'));
   }
 }
 
@@ -49,12 +54,15 @@ renderWithQiankun({
       app.unmount();
       app = null;
     }
+    // 在子应用卸载时，主动停止所有的外部监听和 watch，防止内存泄漏和幽灵篡改 URL！
+    clearAuthListener(props);
   },
   update(props: any) {
     console.log('[子应用] Update');
   },
 });
 
+// 独立运行时的渲染逻辑
 if (!qiankunWindow.__POWERED_BY_QIANKUN__) {
   render();
 }
