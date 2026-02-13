@@ -67,7 +67,7 @@
           <el-input v-model="formData.permission" placeholder="如 system:user:list" />
         </el-form-item>
 
-        <el-form-item label="路由路径" prop="path" v-if="formData.type !== 'button'">
+        <el-form-item label="路由路径" prop="path" v-if="formData.type === 'menu'">
           <el-input v-model="formData.path" placeholder="请输入相对路径，如 /list">
             <template #prefix v-if="currentAppPrefix">
               <span class="path-prefix">{{ currentAppPrefix }}</span>

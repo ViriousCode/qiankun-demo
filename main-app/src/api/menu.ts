@@ -12,6 +12,7 @@ export interface Menu {
   app?: string;
   name?: string;
   menuName?: string;
+  disabled?: boolean;
   children?: Menu[];
 }
 

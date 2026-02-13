@@ -109,7 +109,6 @@ export const usePermissionStore = defineStore('permission', () => {
 
       // 1. 生成树形结构，交给侧边栏去漂亮地渲染
       menus.value = processRoutes(authedMenus);
-
       // 2. 将树形菜单拍平为一维数组，再注入给 Vue Router
       // 这样所有的页面组件都会直接挂在 Layout 下，避免嵌套 Router-View 渲染失败的问题
       const flatRoutes: any[] = [];

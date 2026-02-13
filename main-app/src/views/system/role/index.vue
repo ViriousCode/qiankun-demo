@@ -70,9 +70,6 @@ const isEdit = ref(false);
 const formRef = ref();
 
 const userStore = useUserStore()
-const change = (val: any, node: any) => {
-  console.log(val, node);
-}
 const initialForm = { roleName: '', roleKey: '', description: '' };
 const formData = reactive<Role>({ ...initialForm });
 
@@ -119,7 +116,6 @@ const fetchData = async () => {
   loading.value = true;
   try {
     const res = await getRoleList();
-    console.log('roleList', res.list);
     roleList.value = res.list;
   } finally {
     loading.value = false;
@@ -188,7 +184,6 @@ const getLeafKeys = (tree: any[], targetIds: number[]) => {
 const handlePermission = async (row: Role) => {
   currentRoleId.value = row.id!;
   permissionSelectedKey.value = row.permissionIds || [];
-  console.log('handlePermission', row);
   // 1. 获取后端完整权限树
   const fullTree: any = await getPermissionTree();
 
@@ -197,7 +192,7 @@ const handlePermission = async (row: Role) => {
   // 如果是超级管理员(通常拥有所有权限)，过滤结果就是完整树；如果是普通用户，则只显示部分。
   let treeToShow = [];
   
-  if (userStore.roleKey === 'admin') {
+  if (userStore.userInfo.roleKey === 'admin') {
     treeToShow = fullTree; // 超级管理员拥有上帝视角
   } else {
     treeToShow = filterTreeByPermission(fullTree, userStore.permissions);
@@ -213,9 +208,6 @@ const handlePermission = async (row: Role) => {
       // 这里的 filteredTree 是当前展示在 Tree 上的数据结构
       // 我们需要从这里面筛选出哪些 ID 是叶子节点
       const leafKeys = getLeafKeys(treeToShow, row.permissionIds);
-
-      console.log('Original IDs:', row.permissionIds);
-      console.log('Leaf Keys for Echo:', leafKeys);
 
       // 只设置叶子节点，父节点会自动半选/全选
       permTreeRef.value.setCheckedKeys(leafKeys);

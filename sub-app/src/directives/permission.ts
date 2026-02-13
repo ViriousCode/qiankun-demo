@@ -10,8 +10,6 @@ export const vPermission: Directive = {
 
     const updateDisplay = () => {
       const perms = userStore.permissions || [];
-      // 【调试日志】打开控制台，确认这个日志打印了，且 perms 里确实没有该权限
-      // console.log(`[指令检查] 目标权限: ${value} | 当前持有:`, perms);
 
       let hasPermission = false;
       if (value && value instanceof Array && value.length > 0) {
@@ -23,7 +21,7 @@ export const vPermission: Directive = {
       }
 
       if (!hasPermission) {
-        // 【核心修改】使用 setProperty 加上 !important，防止被其他样式覆盖
+        // 使用 setProperty 加上 !important，防止被其他样式覆盖
         el.style.setProperty('display', 'none', 'important');
       } else {
         // 恢复显示时，清空 display 属性，让它回退到 CSS 定义的默认值 (block/flex/inline)

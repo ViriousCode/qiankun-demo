@@ -38,15 +38,11 @@ export const usePermissionStore = defineStore('permission', () => {
   };
 
   const generateRoutes = (rawMenus: any[]) => {
-    console.log('--- 🚀 [子应用动态路由调试] 开始 ---');
     let myMenus = extractMyMenus(rawMenus);
-
-    // 【核心修复 3】：取消乾坤环境下的全量兜底！
     // 只有在独立运行时 (没被乾坤包裹)，没匹配到才全量渲染
     if (myMenus.length === 0 && !qiankunWindow.__POWERED_BY_QIANKUN__) {
       myMenus = rawMenus;
     }
-    console.log('2. 提取出属于本子应用的菜单:', myMenus);
 
     const processRoutes = (menuList: any[]) => {
       const result: any[] = [];
@@ -86,7 +82,7 @@ export const usePermissionStore = defineStore('permission', () => {
             routeObj.component = lowerCaseModulesMap[lowerDirectPath];
             console.log(`✅ 映射成功: ${safePath} => ${lowerDirectPath}`);
           } else {
-            console.error(`❌ 映射失败! 物理文件真的不存在: ${indexPath} 或 ${directPath}`);
+            console.error(`❌ 映射失败! 物理文件不存在: ${indexPath} 或 ${directPath}`);
           }
         }
         
@@ -127,7 +123,6 @@ export const usePermissionStore = defineStore('permission', () => {
     }
 
     isRoutesLoaded.value = true;
-    console.log('--- 🏁 [子应用动态路由调试] 结束 ---');
   };
 
   const reset = () => {

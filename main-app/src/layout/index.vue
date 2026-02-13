@@ -35,7 +35,6 @@ const toggleCollapse = () => {
 const userStore = useUserStore();
 
 const handleGlobalRefresh = async () => {
-  console.log('[Layout] 收到刷新请求，正在更新 Store...');
   // 确保你的 userStore 中有 refreshAndSync 这个方法
   if (userStore.refreshAndSync) {
     await userStore.refreshAndSync();

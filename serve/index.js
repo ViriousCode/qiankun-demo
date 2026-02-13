@@ -138,7 +138,7 @@ let menuList = [
     id: 3,
     parentId: null,
     title: '测试子应用',
-    path: '/test',
+    path: '',
     icon: 'List',
     sort: 3,
     permission: 'sub:test:list',
