@@ -1,19 +1,19 @@
-import request from '@/utils/request'
+import request from '@/utils/request';
 
 // 登录接口
 export const loginApi = (data: { username: string; password: string }) => {
-  return request.post<{ token: string }>('/api/login', data)
-}
+  return request.post<{ token: string }>('/api/login', data);
+};
 
 // 获取用户信息接口
-interface UserInfo { 
-  userName: string; 
-  roleId: string; 
-  roleKey: string; 
-  avatar?:string
-  nickName?:string
-  permissions: string[] 
+interface UserInfo {
+  userName: string;
+  roleId: string;
+  roleKey: string;
+  avatar?: string;
+  nickName?: string;
+  permissions: string[];
 }
 export const getUserInfoApi = () => {
-  return request.get<UserInfo>('/api/user/info')
-}
+  return request.get<UserInfo>('/api/user/info');
+};

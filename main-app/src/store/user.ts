@@ -3,12 +3,12 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { loginApi, getUserInfoApi } from '@/api/user';
 import { usePermissionStore } from './permission';
-import { setSharedState } from '@/micro/shared'; 
+import { setSharedState } from '@/micro/shared';
 
 export const useUserStore = defineStore('user', () => {
   const token = ref(localStorage.getItem('main-app-token') || '');
   const permissions = ref<string[]>([]);
-  
+
   // 🚨 【重构】：将分散的字段统一收纳到 userInfo 对象中
   const userInfo = ref({
     userName: '',
@@ -23,11 +23,11 @@ export const useUserStore = defineStore('user', () => {
     const permissionStore = usePermissionStore();
     // 确保拿到的是最新的菜单
     const currentMenus = permissionStore.menus;
-    
+
     setSharedState({
       token: token.value,
       // 🚨 直接传递完整的 userInfo 对象，子应用收到后直接覆盖即可
-      user: userInfo.value, 
+      user: userInfo.value,
       permissions: permissions.value,
       menus: currentMenus
     });
@@ -36,7 +36,7 @@ export const useUserStore = defineStore('user', () => {
   // 广播函数 (内部辅助，用于某些不走 Qiankun props 的场景)
   const broadcastPermissions = (perms: string[]) => {
     const event = new CustomEvent('global-sync-permissions', {
-      detail: { permissions: perms },
+      detail: { permissions: perms }
     });
     window.dispatchEvent(event);
   };
@@ -46,7 +46,7 @@ export const useUserStore = defineStore('user', () => {
     const permissionStore = usePermissionStore();
     try {
       // 1. 刷新用户信息
-      await getUserInfo(); 
+      await getUserInfo();
 
       // 2. 刷新菜单
       await permissionStore.generateMenus();
@@ -76,7 +76,7 @@ export const useUserStore = defineStore('user', () => {
     try {
       const data = await getUserInfoApi();
       permissions.value = data.permissions;
-      
+
       // 🚨 【重构】：统一赋值给 userInfo
       userInfo.value = {
         userName: data.userName,
@@ -85,7 +85,7 @@ export const useUserStore = defineStore('user', () => {
         avatar: data.avatar || '',
         nickName: data.nickName || ''
       };
-      
+
       // 获取完完整信息后，同步给子应用
       syncToSubApp();
 
@@ -101,7 +101,7 @@ export const useUserStore = defineStore('user', () => {
     const permissionStore = usePermissionStore();
     token.value = '';
     permissions.value = [];
-    
+
     // 🚨 清空 userInfo
     userInfo.value = {
       userName: '',
@@ -110,7 +110,7 @@ export const useUserStore = defineStore('user', () => {
       avatar: '',
       nickName: ''
     };
-    
+
     localStorage.removeItem('main-app-token');
 
     // 重置主应用菜单
@@ -125,13 +125,13 @@ export const useUserStore = defineStore('user', () => {
     });
   };
 
-  return { 
-    token, 
-    permissions, 
-    userInfo, 
-    login, 
-    getUserInfo, 
-    reset, 
-    refreshAndSync 
+  return {
+    token,
+    permissions,
+    userInfo,
+    login,
+    getUserInfo,
+    reset,
+    refreshAndSync
   };
 });

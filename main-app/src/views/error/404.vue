@@ -7,6 +7,13 @@
 </template>
 
 <style scoped>
-.not-found { text-align: center; margin-top: 100px; }
-h1 { font-size: 100px; color: #d1d5db; margin: 0; }
+  .not-found {
+    text-align: center;
+    margin-top: 100px;
+  }
+  h1 {
+    font-size: 100px;
+    color: #d1d5db;
+    margin: 0;
+  }
 </style>

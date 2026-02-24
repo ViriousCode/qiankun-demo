@@ -26,9 +26,9 @@ const listeners: Array<(state: SharedState) => void> = [];
 export const setSharedState = (newState: Partial<SharedState>) => {
   // 更新状态
   state.value = { ...state.value, ...newState };
-  
+
   // 通知所有订阅者
-  listeners.forEach(listener => listener(state.value));
+  listeners.forEach((listener) => listener(state.value));
 };
 
 /**

@@ -26,4 +26,4 @@ export const initQiankun = async () => {
     console.error('[Qiankun] Failed to load app config:', error);
     ElMessage.error('微应用配置加载失败');
   }
-}
+};

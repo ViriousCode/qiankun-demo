@@ -16,14 +16,15 @@ router.beforeEach(async (to, from, next) => {
       // 如果还没加载过动态路由
       if (!permissionStore.isRoutesLoaded) {
         try {
-          if (!userStore.roleId) await userStore.getUserInfo();
-          
+          if (!userStore.userInfo.roleId) await userStore.getUserInfo();
+
           // 获取并动态注入路由
           await permissionStore.generateMenus();
-          
+
           // replace: true 确保路由完整替换，触发重新解析
           next({ ...to, replace: true });
         } catch (error) {
+          console.error('路由拦截发生错误:', error)
           userStore.reset();
           next(`/login?redirect=${to.path}`);
         }
@@ -44,5 +45,4 @@ router.beforeEach(async (to, from, next) => {
   }
 });
 
-router.afterEach(() => {
-});
+router.afterEach(() => { });

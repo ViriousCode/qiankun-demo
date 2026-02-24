@@ -18,7 +18,7 @@ class Request {
   constructor(config: AxiosRequestConfig) {
     this.instance = axios.create({
       timeout: 10000,
-      ...config,
+      ...config
     });
 
     this.setupInterceptors();
@@ -56,24 +56,24 @@ class Request {
         // 【统一】业务错误处理
         const msg = res.msg || res.message || '请求失败';
         ElMessage.error(msg);
-        
+
         // 可选：在这里处理 401 Token 过期，重定向到登录
         if (res.code === 401) {
-           const userStore = useUserStore();
-           userStore.reset();
-           // location.href = '/login'; // 或者抛出特定错误让路由守卫处理
+          const userStore = useUserStore();
+          userStore.reset();
+          // location.href = '/login'; // 或者抛出特定错误让路由守卫处理
         }
 
         return Promise.reject(new Error(msg));
       },
       (error) => {
-        let msg = '网络错误';
+        let msg;
         if (error.response && error.response.data) {
-           msg = error.response.data.msg || error.response.data.message || error.message;
+          msg = error.response.data.msg || error.response.data.message || error.message;
         } else {
-           msg = error.message;
+          msg = error.message;
         }
-        
+
         ElMessage.error(msg);
         return Promise.reject(error);
       }
@@ -81,7 +81,7 @@ class Request {
   }
 
   // --- 封装常用方法 (支持泛型 T) ---
-  
+
   // 基础请求
   public request<T = any>(config: AxiosRequestConfig): Promise<T> {
     return this.instance.request(config);
@@ -108,5 +108,5 @@ class Request {
 export default new Request({
   // 注意：这里使用 import.meta.env.VITE_BASE_URL
   // 如果子应用以前叫 VITE_BASE_API，请去 .env 文件里改成 VITE_BASE_URL，保持一致
-  baseURL: import.meta.env.VITE_BASE_URL 
+  baseURL: import.meta.env.VITE_BASE_URL
 });

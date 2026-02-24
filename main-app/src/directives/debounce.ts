@@ -25,7 +25,7 @@ export const vDebounce: Directive = {
         }
       },
       delay,
-      { edges: ['leading'] } 
+      { edges: ['leading'] }
     );
 
     // 3. 绑定点击事件
@@ -40,7 +40,7 @@ export const vDebounce: Directive = {
     if (el.__debounceHandler__) {
       el.removeEventListener('click', el.__debounceHandler__);
       // es-toolkit 的 debounce 返回的函数带有 cancel 方法，可以取消挂起的调用
-      el.__debounceHandler__.cancel(); 
+      el.__debounceHandler__.cancel();
       delete el.__debounceHandler__;
     }
   }

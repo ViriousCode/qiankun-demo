@@ -16,8 +16,12 @@
       <el-table-column prop="createTime" label="创建时间" width="180" />
       <el-table-column label="操作" width="180" fixed="right" align="center">
         <template #default="scope">
-          <el-button link type="primary" size="small" @click="handleEdit(scope.row)">编辑</el-button>
-          <el-button link type="danger" size="small" @click="handleDelete(scope.row)">删除</el-button>
+          <el-button link type="primary" size="small" @click="handleEdit(scope.row)">
+            编辑
+          </el-button>
+          <el-button link type="danger" size="small" @click="handleDelete(scope.row)">
+            删除
+          </el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -46,80 +50,84 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue';
-import { ElMessage, ElMessageBox } from 'element-plus';
-import { getAppList, addApp, updateApp, deleteApp, type MicroApp } from '@/api/app';
+  import { ref, reactive, onMounted } from 'vue';
+  import { ElMessage, ElMessageBox } from 'element-plus';
+  import { getAppList, addApp, updateApp, deleteApp, type MicroApp } from '@/api/app';
+  import { useUserStore } from '@/store/user';
 
-const loading = ref(false);
-const tableData = ref<MicroApp[]>([]);
-const dialogVisible = ref(false);
-const isEdit = ref(false);
-const formRef = ref();
+  const loading = ref(false);
+  const tableData = ref<MicroApp[]>([]);
+  const dialogVisible = ref(false);
+  const isEdit = ref(false);
+  const formRef = ref();
+  const userStore = useUserStore();
 
-const initialForm: MicroApp = {
-  name: '',
-  entry: '',
-  activeRule: '',
-  container: '#sub-app-container'
-};
-const formData = reactive<MicroApp>({ ...initialForm });
+  const initialForm: MicroApp = {
+    name: '',
+    entry: '',
+    activeRule: '',
+    container: '#sub-app-container'
+  };
+  const formData = reactive<MicroApp>({ ...initialForm });
 
-const rules = {
-  name: [{ required: true, message: '请输入应用名称', trigger: 'blur' }],
-  entry: [{ required: true, message: '请输入入口地址', trigger: 'blur' }],
-  activeRule: [{ required: true, message: '请输入激活规则', trigger: 'blur' }],
-  container: [{ required: true, message: '请输入挂载容器', trigger: 'blur' }]
-};
+  const rules = {
+    name: [{ required: true, message: '请输入应用名称', trigger: 'blur' }],
+    entry: [{ required: true, message: '请输入入口地址', trigger: 'blur' }],
+    activeRule: [{ required: true, message: '请输入激活规则', trigger: 'blur' }],
+    container: [{ required: true, message: '请输入挂载容器', trigger: 'blur' }]
+  };
 
-const fetchData = async () => {
-  loading.value = true;
-  try {
-    const res = await getAppList();
-    tableData.value = res || [];
-  } finally {
-    loading.value = false;
-  }
-};
-
-const handleAdd = () => {
-  isEdit.value = false;
-  Object.assign(formData, initialForm);
-  dialogVisible.value = true;
-};
-
-const handleEdit = (row: MicroApp) => {
-  isEdit.value = true;
-  Object.assign(formData, row);
-  dialogVisible.value = true;
-};
-
-const handleDelete = (row: MicroApp) => {
-  ElMessageBox.confirm('确认删除该应用配置吗?', '提示', { type: 'warning' }).then(async () => {
-    if (row.id) {
-      await deleteApp(row.id);
-      ElMessage.success('删除成功');
-      // 提示用户刷新页面以生效（如果做了动态注册）
-      // ElMessage.info('请刷新页面以更新微应用注册配置');
-      fetchData();
+  const fetchData = async () => {
+    loading.value = true;
+    try {
+      const res = await getAppList();
+      tableData.value = res || [];
+    } finally {
+      loading.value = false;
     }
-  });
-};
+  };
 
-const submitForm = async () => {
-  if (!formRef.value) return;
-  await formRef.value.validate(async (valid: boolean) => {
-    if (valid) {
-      if (isEdit.value && formData.id) {
-        await updateApp(formData.id, formData);
-      } else {
-        await addApp(formData);
+  const handleAdd = () => {
+    isEdit.value = false;
+    Object.assign(formData, initialForm);
+    dialogVisible.value = true;
+  };
+
+  const handleEdit = (row: MicroApp) => {
+    isEdit.value = true;
+    Object.assign(formData, row);
+    dialogVisible.value = true;
+  };
+
+  const handleDelete = (row: MicroApp) => {
+    ElMessageBox.confirm('确认删除该应用配置吗?', '提示', { type: 'warning' }).then(async () => {
+      if (row.id) {
+        await deleteApp(row.id);
+        ElMessage.success('删除成功');
+        // 提示用户刷新页面以生效（如果做了动态注册）
+        // ElMessage.info('请刷新页面以更新微应用注册配置');
+        fetchData();
+        await userStore.refreshAndSync();
       }
-      ElMessage.success('操作成功');
-      dialogVisible.value = false;
-      fetchData();
-    }
-  });
-};
+    });
+  };
 
-onMounted(fetchData);
+  const submitForm = async () => {
+    if (!formRef.value) return;
+    await formRef.value.validate(async (valid: boolean) => {
+      if (valid) {
+        if (isEdit.value && formData.id) {
+          await updateApp(formData.id, formData);
+        } else {
+          await addApp(formData);
+        }
+        ElMessage.success('操作成功');
+        dialogVisible.value = false;
+        fetchData();
+        await userStore.refreshAndSync();
+      }
+    });
+  };
+
+  onMounted(fetchData);
 </script>

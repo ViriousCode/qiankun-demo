@@ -2,10 +2,10 @@ import request from '@/utils/request';
 
 export interface MicroApp {
   id?: number;
-  name: string;       // 应用名称 (唯一标识)
-  entry: string;      // 入口地址
+  name: string; // 应用名称 (唯一标识)
+  entry: string; // 入口地址
   activeRule: string; // 激活规则 (路由前缀)
-  container: string;  // 挂载容器 (通常是 #sub-app-container)
+  container: string; // 挂载容器 (通常是 #sub-app-container)
   createTime?: string;
 }
 

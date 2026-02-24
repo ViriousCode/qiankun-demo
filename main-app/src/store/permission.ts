@@ -11,7 +11,7 @@ const modules = import.meta.glob('../views/**/*.vue');
 
 const filterMenus = (menus: Menu[], perms: string[]): Menu[] => {
   const res: Menu[] = [];
-  menus.forEach(menu => {
+  menus.forEach((menu) => {
     const tmp = { ...menu };
     if (tmp.children) {
       tmp.children = filterMenus(tmp.children, perms);
@@ -55,14 +55,16 @@ export const usePermissionStore = defineStore('permission', () => {
 
       const processRoutes = (menuList: any[]) => {
         const result: any[] = [];
-        
-        menuList.forEach(item => {
+
+        menuList.forEach((item) => {
           if (item.type === 'button') return;
 
-          const uniquePath = item.path || `/dir-${item.id || Math.random().toString(36).substring(2, 8)}`;
+          const uniquePath =
+            item.path || `/dir-${item.id || Math.random().toString(36).substring(2, 8)}`;
 
           // 【核心修复】：优先读取 meta.title，全面兼容各种后端返回格式
-          const metaTitle = item.meta?.title || item.title || item.menuName || item.name || '未命名菜单';
+          const metaTitle =
+            item.meta?.title || item.title || item.menuName || item.name || '未命名菜单';
           const metaIcon = item.meta?.icon || item.icon;
           const metaHidden = item.meta?.hidden || item.hidden || false;
 
@@ -87,8 +89,7 @@ export const usePermissionStore = defineStore('permission', () => {
             const prefix = appPrefixMap[item.app];
             const relativePath = item.path.startsWith('/') ? item.path : `/${item.path}`;
             routeObj.path = `${prefix}${relativePath}`;
-          } 
-          else if (item.app === 'main' || !item.app) { 
+          } else if (item.app === 'main' || !item.app) {
             // 兼容没有 app 字段的纯目录节点 (!item.app)
             if (item.type === 'menu' && item.path) {
               const safePath = item.path.startsWith('/') ? item.path : `/${item.path}`;
@@ -100,7 +101,7 @@ export const usePermissionStore = defineStore('permission', () => {
               }
             }
           }
-          
+
           // 无论是不是 main，都推进去保证能在侧边栏渲染
           result.push(routeObj);
         });
@@ -113,7 +114,7 @@ export const usePermissionStore = defineStore('permission', () => {
       // 这样所有的页面组件都会直接挂在 Layout 下，避免嵌套 Router-View 渲染失败的问题
       const flatRoutes: any[] = [];
       const generateFlatRoutes = (routeTree: any[]) => {
-        routeTree.forEach(item => {
+        routeTree.forEach((item) => {
           if (item.children && item.children.length > 0) {
             generateFlatRoutes(item.children);
           }
@@ -127,9 +128,23 @@ export const usePermissionStore = defineStore('permission', () => {
       generateFlatRoutes(menus.value);
 
       // 3. 将拍平后的路由全部注入为 Layout 的儿子
-      flatRoutes.forEach(routeObj => {
+      flatRoutes.forEach((routeObj) => {
         router.addRoute('Layout', routeObj);
       });
+
+      if (!router.hasRoute('WorkbenchDisplay')) {
+        router.addRoute('Layout', {
+          path: '/workbench',
+          name: 'WorkbenchDisplay',
+          // ⚠️ 请确保这里 import 的路径跟你上一步创建“展示组件”的实际路径一致！
+          component: () => import('@/views/workbench/index.vue'),
+          meta: {
+            title: '我的工作台',
+            icon: 'Monitor',
+            hidden: true // hidden 为 true 代表不让它自动在左侧菜单栏里渲染出一个多余的项
+          }
+        });
+      }
 
       // 4. 兜底 404
       if (!router.hasRoute('NotFound')) {

@@ -1,32 +1,28 @@
-import { defineConfig } from 'vite'
-import vue from '@vitejs/plugin-vue'
-import { resolve } from 'path'
+import { defineConfig } from 'vite';
+import vue from '@vitejs/plugin-vue';
+import { resolve } from 'path';
 
-import AutoImport from 'unplugin-auto-import/vite'
-import Components from 'unplugin-vue-components/vite'
-import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
+import AutoImport from 'unplugin-auto-import/vite';
+import Components from 'unplugin-vue-components/vite';
+import { ElementPlusResolver } from 'unplugin-vue-components/resolvers';
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
     vue(),
     AutoImport({
-      imports: [
-        'vue',
-        'vue-router',
-        'pinia'
-      ],
-      dts: 'src/auto-imports.d.ts',  // 生成类型声明文件
-      resolvers: [ElementPlusResolver()],
+      imports: ['vue', 'vue-router', 'pinia'],
+      dts: 'src/auto-imports.d.ts', // 生成类型声明文件
+      resolvers: [ElementPlusResolver()]
     }),
     Components({
-      dts: 'src/components.d.ts',  // 生成组件类型声明
+      dts: 'src/components.d.ts', // 生成组件类型声明
       resolvers: [
         ElementPlusResolver({
-          importStyle: 'sass',  // 使用 sass
-        }),
-      ],
-    }),
+          importStyle: 'sass' // 使用 sass
+        })
+      ]
+    })
   ],
   server: {
     port: 6789,
@@ -34,14 +30,14 @@ export default defineConfig({
     proxy: {
       '/api': {
         target: 'http://localhost:3000', // 后端地址
-        changeOrigin: true,
+        changeOrigin: true
         // rewrite: (path) => path.replace(/^\/api/, '') // 如果后端路由没有 /api 前缀，就开启这行
       }
     }
   },
   resolve: {
     alias: {
-      '@': resolve(__dirname, './src'),
-    },
-  },
-})
+      '@': resolve(__dirname, './src')
+    }
+  }
+});
