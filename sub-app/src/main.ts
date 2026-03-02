@@ -5,8 +5,10 @@ import router from './router';
 import { createPinia } from 'pinia';
 import { renderWithQiankun, qiankunWindow } from 'vite-plugin-qiankun/dist/helper';
 
+import '@/assets/main.css';
+
 // 清除监听器的方法
-import { initAuthListener, clearAuthListener } from '@/utils/auth-listener'; 
+import { initAuthListener, clearAuthListener } from '@/utils/auth-listener';
 // 引入指令
 import { vPermission } from '@/directives/permission';
 import { vDebounce } from '@/directives/debounce';
@@ -14,14 +16,24 @@ import { vDebounce } from '@/directives/debounce';
 import '@/router/permission'
 
 let app: any;
-
-function render(props: any = {}) {
+async function render(props: any = {}) {
   const { container } = props;
   app = createApp(App);
 
   // 1. 注册插件
   const pinia = createPinia();
   app.use(pinia);
+
+  // 🚨 【开发便利】：如果是独立运行，在 router 挂载前注入 Mock Token
+  if (!qiankunWindow.__POWERED_BY_QIANKUN__) {
+    const { useUserStore } = await import('@/store/user'); // 动态引入避免报错
+    const userStore = useUserStore();
+    // 强制给个 Token 骗过路由守卫，方便独立调试业务页面
+    if (!userStore.token) {
+      userStore.token = 'mock-dev-token-123';
+    }
+  }
+
   app.use(router);
 
   // 2. 注册指令
@@ -33,11 +45,6 @@ function render(props: any = {}) {
 
   // 4. 挂载应用
   app.mount(container ? container.querySelector('#test-sub-app') : '#test-sub-app');
-
-  // 5. 挂载完成后向主应用请求最新数据
-  if (qiankunWindow.__POWERED_BY_QIANKUN__) {
-    window.dispatchEvent(new Event('test-sub-app-ask-for-refresh'));
-  }
 }
 
 renderWithQiankun({

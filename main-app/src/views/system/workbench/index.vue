@@ -17,9 +17,7 @@
         </el-table-column>
         <el-table-column prop="icon" label="图标" width="80" align="center">
           <template #default="{ row }">
-            <el-icon size="20">
-              <component :is="row.icon" v-if="row.icon" />
-            </el-icon>
+            <MenuIcon v-if="row.icon" :icon="row.icon" />
           </template>
         </el-table-column>
         <el-table-column prop="targetType" label="跳转类型" width="120" align="center">
@@ -60,47 +58,8 @@
             <el-option label="外部工具" value="外部工具" />
           </el-select>
         </el-form-item>
-        <!-- <el-form-item label="图标名称" prop="icon">
-          <el-input v-model="form.icon" placeholder="ElementPlus 图标名，如：List, Link" />
-        </el-form-item> -->
         <el-form-item label="图标" prop="icon">
-          <el-popover placement="bottom-start" :width="450" trigger="click">
-            <template #reference>
-              <el-input v-model="form.icon" placeholder="点击选择图标" readonly class="icon-input">
-                <template #prefix>
-                  <el-icon v-if="form.icon">
-                    <component :is="form.icon" />
-                  </el-icon>
-                  <el-icon v-else>
-                    <Search />
-                  </el-icon>
-                </template>
-                <template #suffix>
-                  <el-icon v-if="form.icon" class="cursor-pointer" @click.stop="form.icon = ''">
-                    <CircleClose />
-                  </el-icon>
-                </template>
-              </el-input>
-            </template>
-            <div class="icon-selector">
-              <el-scrollbar height="250px">
-                <div class="icon-list">
-                  <div
-                    v-for="name in iconList"
-                    :key="name"
-                    class="icon-item"
-                    :class="{ 'is-active': form.icon === name }"
-                    @click="form.icon = name"
-                  >
-                    <el-icon :size="20">
-                      <component :is="name" />
-                    </el-icon>
-                    <span class="icon-name">{{ name }}</span>
-                  </div>
-                </div>
-              </el-scrollbar>
-            </div>
-          </el-popover>
+          <IconSelect v-model="form.icon" />
         </el-form-item>
         <el-form-item label="跳转类型" prop="targetType">
           <el-radio-group v-model="form.targetType">

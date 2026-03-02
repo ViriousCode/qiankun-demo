@@ -1,3 +1,4 @@
+<!-- TODO: 菜单管理页面选择器选择子应用显示 -->
 <template>
   <div class="menu-container p-4">
     <div class="mb-4">
@@ -15,9 +16,7 @@
       <el-table-column prop="title" label="菜单名称" width="200" />
       <el-table-column prop="icon" label="图标" width="60" align="center">
         <template #default="scope">
-          <el-icon v-if="scope.row.icon">
-            <component :is="scope.row.icon" />
-          </el-icon>
+          <MenuIcon :icon="scope.row.icon" />
         </template>
       </el-table-column>
       <el-table-column prop="app" label="所属应用" width="150" align="center">
@@ -117,52 +116,7 @@
         </el-form-item>
 
         <el-form-item label="图标" prop="icon" v-if="formData.type !== 'button'">
-          <el-popover placement="bottom-start" :width="450" trigger="click">
-            <template #reference>
-              <el-input
-                v-model="formData.icon"
-                placeholder="点击选择图标"
-                readonly
-                class="icon-input"
-              >
-                <template #prefix>
-                  <el-icon v-if="formData.icon">
-                    <component :is="formData.icon" />
-                  </el-icon>
-                  <el-icon v-else>
-                    <Search />
-                  </el-icon>
-                </template>
-                <template #suffix>
-                  <el-icon
-                    v-if="formData.icon"
-                    class="cursor-pointer"
-                    @click.stop="formData.icon = ''"
-                  >
-                    <CircleClose />
-                  </el-icon>
-                </template>
-              </el-input>
-            </template>
-            <div class="icon-selector">
-              <el-scrollbar height="250px">
-                <div class="icon-list">
-                  <div
-                    v-for="name in iconList"
-                    :key="name"
-                    class="icon-item"
-                    :class="{ 'is-active': formData.icon === name }"
-                    @click="formData.icon = name"
-                  >
-                    <el-icon :size="20">
-                      <component :is="name" />
-                    </el-icon>
-                    <span class="icon-name">{{ name }}</span>
-                  </div>
-                </div>
-              </el-scrollbar>
-            </div>
-          </el-popover>
+          <IconSelect v-model="formData.icon" />
         </el-form-item>
 
         <el-form-item label="排序" prop="sort">
@@ -184,7 +138,6 @@
   import { getAppList } from '@/api/app';
   import { useUserStore } from '@/store/user';
   import * as ElementPlusIconsVue from '@element-plus/icons-vue';
-  import { Search, CircleClose } from '@element-plus/icons-vue';
 
   const menuData = ref<Menu[]>([]);
   const dialogVisible = ref(false);

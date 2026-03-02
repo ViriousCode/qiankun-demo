@@ -33,6 +33,7 @@ export function initAuthListener(props: any, router: Router) {
 
   // 1. 初始化时手动拉取一次
   const initialState = props.getSharedState();
+  console.log('initialState', initialState);
   if (initialState) {
     handleStateChange(initialState, userStore, permissionStore, router);
   }

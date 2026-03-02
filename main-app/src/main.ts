@@ -16,6 +16,9 @@ import zhCn from 'element-plus/es/locale/lang/zh-cn';
 
 import { vDebounce } from '@/directives/debounce';
 
+import '@/assets/iconfont/iconfont.css';
+import '@/assets/iconfont/iconfont';
+
 const app = createApp(App);
 //----------------- pinia -----------------//
 const pinia = createPinia();

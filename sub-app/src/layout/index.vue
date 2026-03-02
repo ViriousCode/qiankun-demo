@@ -1,13 +1,17 @@
 <template>
   <div v-if="isQiankun" class="sub-app-layout">
-    <router-view />
+    <router-view v-slot="{ Component, route }">
+      <transition name="fade" mode="out-in">
+        <component :is="Component" :key="route.path" />
+      </transition>
+    </router-view>
   </div>
 
   <el-container v-else class="local-layout">
     <el-aside width="210px" class="local-aside">
       <Aside />
     </el-aside>
-    
+
     <el-container>
       <el-header class="local-header">
         <div class="header-left">
@@ -15,23 +19,38 @@
         </div>
         <el-tag type="warning" size="small">Standalone</el-tag>
       </el-header>
-      
+
       <el-main class="local-main">
-        <router-view />
+        <router-view v-slot="{ Component, route }">
+          <transition name="fade" mode="out-in">
+            <component :is="Component" :key="route.path" />
+          </transition>
+        </router-view>
       </el-main>
     </el-container>
   </el-container>
 </template>
 
 <script setup lang="ts">
-import { qiankunWindow } from 'vite-plugin-qiankun/dist/helper';
-import Aside from './components/Aside.vue';
+import { qiankunWindow } from "vite-plugin-qiankun/dist/helper";
+import Aside from "./components/Aside.vue";
 
 const isQiankun = qiankunWindow.__POWERED_BY_QIANKUN__;
 </script>
 
 <style scoped>
-.sub-app-layout { min-height: 100%; }
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+.sub-app-layout {
+  min-height: 100%;
+}
 
 .local-layout {
   height: 100vh;

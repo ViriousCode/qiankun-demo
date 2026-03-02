@@ -2,7 +2,7 @@ import { fileURLToPath, URL } from 'node:url'
 
 import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import vueDevTools from 'vite-plugin-vue-devtools'
+// import vueDevTools from 'vite-plugin-vue-devtools'
 
 import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components/vite'
@@ -36,10 +36,10 @@ export default defineConfig(({ mode }) => {
       ],
     }),
   ]
-  if (env.VITE_SHOW_DEVTOOLS === 'true' && mode !== 'production') {
-    console.log('🚀 Vue DevTools 插件已启用');
-    plugins.push(vueDevTools());
-  }
+  // if (env.VITE_SHOW_DEVTOOLS === 'true' && mode !== 'production') {
+  //   console.log('🚀 Vue DevTools 插件已启用');
+  //   plugins.push(vueDevTools());
+  // }
   return {
     base: '/test-sub-app/',
     plugins,

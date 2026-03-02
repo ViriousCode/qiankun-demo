@@ -1,3 +1,4 @@
+<!-- TODO: 大屏全屏，另一个挂载容器 -->
 <template>
   <div class="app-container p-4">
     <div class="mb-4">

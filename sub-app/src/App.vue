@@ -1,15 +1,11 @@
 <template>
-  <router-view v-slot="{ Component }">
-    <transition name="fade" mode="out-in">
-      <component :is="Component" :key="$route.fullPath" />
-    </transition>
-  </router-view>
+  <router-view />
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
-import { useUserStore } from '@/store/user';
+import { onMounted, onUnmounted } from "vue";
+import { useRouter, useRoute } from "vue-router";
+import { useUserStore } from "@/store/user";
 
 const router = useRouter();
 const route = useRoute();
@@ -24,7 +20,7 @@ const handleMicroRouteChange = (event: Event) => {
 
   // 2. 掐头去尾，算出子应用内部路径
   // 假设 activeRule 是 "/test-sub-app"，需要把它去掉
-  const targetPath = fullPath.replace('/test-sub-app', '') || '/';
+  const targetPath = fullPath.replace("/test-sub-app", "") || "/";
 
   // 3. 如果当前路径不对，就跳过去
   if (route.path !== targetPath) {
@@ -43,14 +39,14 @@ const handleSyncPermissions = (event: Event) => {
 
 onMounted(() => {
   // 监听自定义事件
-  window.removeEventListener('micro-app-route-change', handleMicroRouteChange);
-  window.removeEventListener('global-sync-permissions', handleSyncPermissions);
-  window.addEventListener('micro-app-route-change', handleMicroRouteChange);
-  window.addEventListener('global-sync-permissions', handleSyncPermissions);
+  window.removeEventListener("micro-app-route-change", handleMicroRouteChange);
+  window.removeEventListener("global-sync-permissions", handleSyncPermissions);
+  window.addEventListener("micro-app-route-change", handleMicroRouteChange);
+  window.addEventListener("global-sync-permissions", handleSyncPermissions);
 });
 
 onUnmounted(() => {
-  window.removeEventListener('micro-app-route-change', handleMicroRouteChange);
-  window.removeEventListener('global-sync-permissions', handleSyncPermissions);
+  window.removeEventListener("micro-app-route-change", handleMicroRouteChange);
+  window.removeEventListener("global-sync-permissions", handleSyncPermissions);
 });
 </script>
