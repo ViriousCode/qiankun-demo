@@ -87,3 +87,23 @@ button:focus-visible {
   fill: currentColor;
   overflow: hidden;
 }
+
+/* -----------------------------------
+ * 公共布局样式 (Layout Styles)
+ * ----------------------------------- */
+
+/* 统一的页面顶部操作栏 (仅保留卡片外观，排版交由 el-row 控制) */
+.action-bar {
+  background-color: var(--el-bg-color);
+  padding: 18px 20px 0 20px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 4px rgba(0, 21, 41, 0.04);
+}
+
+.content-card {
+  background-color: var(--el-bg-color);
+  padding: 20px;
+  border-radius: 4px;
+  box-shadow: 0 1px 4px rgba(0, 21, 41, 0.04);
+}

@@ -1,12 +1,46 @@
-<!-- TODO: 菜单管理页面选择器选择子应用显示 -->
 <template>
-  <div class="menu-container p-4">
-    <div class="mb-4">
-      <el-button type="primary" icon="Plus" @click="handleAdd()">新增菜单</el-button>
-    </div>
+  <div class="action-bar">
+    <el-form ref="queryRef" :model="queryParams" @submit.prevent="fetchData">
+      <el-row :gutter="20">
+        <el-col :span="6" :xs="24" :sm="12" :md="8" :lg="6" :xl="3">
+          <el-form-item prop="filterApp">
+            <el-select
+              v-model="queryParams.filterApp"
+              placeholder="筛选应用菜单"
+              style="width: 240px"
+              clearable
+              @clear="queryParams.filterApp = ''"
+            >
+              <el-option label="全部应用" value="" />
+              <el-option
+                v-for="item in appOptions"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              />
+            </el-select>
+          </el-form-item>
+        </el-col>
+        <el-col
+          :span="12"
+          :xs="24"
+          :sm="24"
+          :md="12"
+          :lg="8"
+          :xl="6"
+          style="margin-left: auto; text-align: right; margin-bottom: 18px"
+        >
+          <el-button type="primary" icon="Search" @click="fetchData">搜索</el-button>
+          <el-button icon="Refresh" @click="resetQuery">重置</el-button>
+          <el-button type="primary" icon="Plus" @click="handleAdd()">新增菜单</el-button>
+        </el-col>
+      </el-row>
+    </el-form>
+  </div>
 
+  <div class="content-card">
     <el-table
-      :data="menuData"
+      :data="filteredMenuData"
       style="width: 100%; margin-bottom: 20px"
       row-key="id"
       border
@@ -55,80 +89,80 @@
         </template>
       </el-table-column>
     </el-table>
-
-    <el-dialog
-      v-model="dialogVisible"
-      :title="isEdit ? '编辑菜单' : '新增菜单'"
-      width="600px"
-      @close="resetForm"
-    >
-      <el-form ref="formRef" :model="formData" :rules="rules" label-width="100px">
-        <el-form-item label="上级菜单">
-          <el-tree-select
-            v-model="formData.parentId"
-            :data="menuOptions"
-            :props="{ label: 'title', children: 'children', disabled: 'disabled' }"
-            node-key="id"
-            check-strictly
-            placeholder="选择上级菜单"
-            clearable
-            style="width: 100%"
-          />
-        </el-form-item>
-
-        <el-form-item label="所属应用" prop="app">
-          <el-select v-model="formData.app" placeholder="请选择所属应用" style="width: 100%">
-            <el-option
-              v-for="item in appOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            />
-          </el-select>
-        </el-form-item>
-
-        <el-form-item label="菜单类型" prop="type">
-          <el-radio-group v-model="formData.type">
-            <el-radio-button label="directory">目录</el-radio-button>
-            <el-radio-button label="menu">菜单</el-radio-button>
-            <el-radio-button label="button">按钮</el-radio-button>
-          </el-radio-group>
-        </el-form-item>
-
-        <el-form-item label="菜单名称" prop="title">
-          <el-input v-model="formData.title" placeholder="请输入菜单名称" />
-        </el-form-item>
-
-        <el-form-item label="权限标识" prop="permission">
-          <el-input v-model="formData.permission" placeholder="如 system:user:list" />
-        </el-form-item>
-
-        <el-form-item label="路由路径" prop="path" v-if="formData.type === 'menu'">
-          <el-input v-model="formData.path" placeholder="请输入相对路径，如 /list">
-            <template #prefix v-if="currentAppPrefix">
-              <span class="path-prefix">{{ currentAppPrefix }}</span>
-            </template>
-          </el-input>
-          <div class="form-tip" v-if="currentAppPrefix">
-            最终路径: {{ currentAppPrefix }}{{ formData.path.startsWith('/') ? '' : '/'
-            }}{{ formData.path }}
-          </div>
-        </el-form-item>
-
-        <el-form-item label="图标" prop="icon" v-if="formData.type !== 'button'">
-          <IconSelect v-model="formData.icon" />
-        </el-form-item>
-
-        <el-form-item label="排序" prop="sort">
-          <el-input-number v-model="formData.sort" :min="0" :max="999" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitForm">确定</el-button>
-      </template>
-    </el-dialog>
   </div>
+
+  <el-dialog
+    v-model="dialogVisible"
+    :title="isEdit ? '编辑菜单' : '新增菜单'"
+    width="600px"
+    @close="resetForm"
+  >
+    <el-form ref="formRef" :model="formData" :rules="rules" label-width="100px">
+      <el-form-item label="上级菜单">
+        <el-tree-select
+          v-model="formData.parentId"
+          :data="menuOptions"
+          :props="{ label: 'title', children: 'children', disabled: 'disabled' }"
+          node-key="id"
+          check-strictly
+          placeholder="选择上级菜单"
+          clearable
+          style="width: 100%"
+        />
+      </el-form-item>
+
+      <el-form-item label="所属应用" prop="app">
+        <el-select v-model="formData.app" placeholder="请选择所属应用" style="width: 100%">
+          <el-option
+            v-for="item in appOptions"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value"
+          />
+        </el-select>
+      </el-form-item>
+
+      <el-form-item label="菜单类型" prop="type">
+        <el-radio-group v-model="formData.type">
+          <el-radio-button label="directory">目录</el-radio-button>
+          <el-radio-button label="menu">菜单</el-radio-button>
+          <el-radio-button label="button">按钮</el-radio-button>
+        </el-radio-group>
+      </el-form-item>
+
+      <el-form-item label="菜单名称" prop="title">
+        <el-input v-model="formData.title" placeholder="请输入菜单名称" />
+      </el-form-item>
+
+      <el-form-item label="权限标识" prop="permission">
+        <el-input v-model="formData.permission" placeholder="如 system:user:list" />
+      </el-form-item>
+
+      <el-form-item label="路由路径" prop="path" v-if="formData.type === 'menu'">
+        <el-input v-model="formData.path" placeholder="请输入相对路径，如 /list">
+          <template #prefix v-if="currentAppPrefix">
+            <span class="path-prefix">{{ currentAppPrefix }}</span>
+          </template>
+        </el-input>
+        <div class="form-tip" v-if="currentAppPrefix">
+          最终路径: {{ currentAppPrefix }}{{ formData.path.startsWith('/') ? '' : '/'
+          }}{{ formData.path }}
+        </div>
+      </el-form-item>
+
+      <el-form-item label="图标" prop="icon" v-if="formData.type !== 'button'">
+        <IconSelect v-model="formData.icon" />
+      </el-form-item>
+
+      <el-form-item label="排序" prop="sort">
+        <el-input-number v-model="formData.sort" :min="0" :max="999" />
+      </el-form-item>
+    </el-form>
+    <template #footer>
+      <el-button @click="dialogVisible = false">取消</el-button>
+      <el-button type="primary" @click="submitForm">确定</el-button>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup lang="ts">
@@ -137,16 +171,23 @@
   import { getMenuList, addMenu, updateMenu, deleteMenu, type Menu } from '@/api/menu';
   import { getAppList } from '@/api/app';
   import { useUserStore } from '@/store/user';
-  import * as ElementPlusIconsVue from '@element-plus/icons-vue';
 
   const menuData = ref<Menu[]>([]);
-  const dialogVisible = ref(false);
-  const isEdit = ref(false);
-  const formRef = ref();
   const appOptions = ref<any[]>([]);
-  const rawAppList = ref<any[]>([]); // 保存应用原始数据以获取 activeRule
-  const iconList = Object.keys(ElementPlusIconsVue).filter((name) => name !== 'default');
+  const rawAppList = ref<any[]>([]);
 
+  // 筛选
+  const queryParams = reactive({
+    filterApp: ''
+  });
+  const queryRef = ref();
+  const resetQuery = () => {
+    if (queryRef.value) queryRef.value.resetFields();
+  };
+
+  const isEdit = ref(false);
+  const dialogVisible = ref(false);
+  const formRef = ref();
   const initialForm: Menu = {
     parentId: null,
     title: '',
@@ -165,7 +206,24 @@
     app: [{ required: true, message: '请选择所属应用', trigger: 'change' }]
   };
 
-  // 构造上级菜单选项：过滤按钮，编辑时禁用自己
+  // 🌟 递归过滤菜单树
+  const filteredMenuData = computed(() => {
+    if (!queryParams.filterApp) return menuData.value;
+
+    const filterTree = (nodes: Menu[]): Menu[] => {
+      return nodes
+        .map((node) => ({ ...node }))
+        .filter((node) => {
+          if (node.children && node.children.length > 0) {
+            node.children = filterTree(node.children);
+          }
+          return node.app === queryParams.filterApp || (node.children && node.children.length > 0);
+        });
+    };
+
+    return filterTree(menuData.value);
+  });
+
   const menuOptions = computed(() => {
     const buildOptions = (nodes: Menu[]) => {
       const result: any[] = [];
@@ -188,7 +246,6 @@
     ];
   });
 
-  // 【核心】计算当前前缀
   const currentAppPrefix = computed(() => {
     if (!formData.app || formData.app === 'main') return '';
     const targetApp = rawAppList.value.find((app: any) => app.name === formData.app);
@@ -199,7 +256,7 @@
     try {
       const res = await getAppList();
       const subApps = res || [];
-      rawAppList.value = subApps; // 保存原始数据
+      rawAppList.value = subApps;
       appOptions.value = [
         { label: '主应用 (main)', value: 'main' },
         ...subApps.map((app: any) => ({
@@ -228,6 +285,10 @@
     if (row && row.id) {
       formData.parentId = row.id;
       if (row.app) formData.app = row.app;
+    }
+    // 自动带入筛选器中的应用
+    if (queryParams.filterApp && (!row || !row.id)) {
+      formData.app = queryParams.filterApp;
     }
     dialogVisible.value = true;
   };

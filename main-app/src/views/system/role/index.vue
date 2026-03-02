@@ -1,12 +1,38 @@
 <!-- TODO: 角色管理页面 按子应用分组-->
 <template>
-  <div class="role-container p-4">
-    <div class="mb-4">
-      <el-button type="primary" icon="Plus" @click="handleAdd" v-permission="['system:role:add']">
-        新增角色
-      </el-button>
-    </div>
-
+  <div class="mb-4"></div>
+  <div class="action-bar">
+    <el-form ref="queryRef" :model="queryParams" @submit.prevent="fetchData">
+      <el-row :gutter="20">
+        <el-col :span="6" :xs="24" :sm="12" :md="8" :lg="6" :xl="3">
+          <el-form-item prop="searchName">
+            <el-input
+              v-model="queryParams.searchName"
+              placeholder="搜索卡片名称"
+              clearable
+              prefix-icon="Search"
+            />
+          </el-form-item>
+        </el-col>
+        <el-col
+          :span="12"
+          :xs="24"
+          :sm="24"
+          :md="12"
+          :lg="8"
+          :xl="6"
+          style="margin-left: auto; text-align: right; margin-bottom: 18px"
+        >
+          <el-button type="primary" icon="Search" @click="fetchData">搜索</el-button>
+          <el-button icon="Refresh" @click="resetQuery">重置</el-button>
+          <el-button type="primary" icon="Plus" @click="handleAdd" v-permission="'system:role:add'">
+            新增角色
+          </el-button>
+        </el-col>
+      </el-row>
+    </el-form>
+  </div>
+  <div class="content-card">
     <el-table :data="roleList" border style="width: 100%" v-loading="loading">
       <el-table-column prop="id" label="ID" width="80" />
       <el-table-column prop="roleName" label="角色名称" width="150" />
@@ -45,44 +71,43 @@
         </template>
       </el-table-column>
     </el-table>
-
-    <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑角色' : '新增角色'" width="500px">
-      <el-form ref="formRef" :model="formData" :rules="rules" label-width="80px">
-        <el-form-item label="角色名称" prop="roleName">
-          <el-input v-model="formData.roleName" placeholder="请输入角色名称" />
-        </el-form-item>
-        <el-form-item label="权限字符" prop="roleKey">
-          <el-input v-model="formData.roleKey" placeholder="例如 admin" />
-        </el-form-item>
-        <el-form-item label="描述">
-          <el-input v-model="formData.description" type="textarea" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="submitForm">确定</el-button>
-        </span>
-      </template>
-    </el-dialog>
-
-    <el-dialog v-model="permDialogVisible" title="分配权限" width="600px">
-      <el-tree
-        ref="permTreeRef"
-        :data="permissionData"
-        :props="{ label: 'title', children: 'children' }"
-        show-checkbox
-        node-key="id"
-        default-expand-all
-      />
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="permDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="submitPermission">保存</el-button>
-        </span>
-      </template>
-    </el-dialog>
   </div>
+  <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑角色' : '新增角色'" width="500px">
+    <el-form ref="formRef" :model="formData" :rules="rules" label-width="80px">
+      <el-form-item label="角色名称" prop="roleName">
+        <el-input v-model="formData.roleName" placeholder="请输入角色名称" />
+      </el-form-item>
+      <el-form-item label="权限字符" prop="roleKey">
+        <el-input v-model="formData.roleKey" placeholder="例如 admin" />
+      </el-form-item>
+      <el-form-item label="描述">
+        <el-input v-model="formData.description" type="textarea" />
+      </el-form-item>
+    </el-form>
+    <template #footer>
+      <span class="dialog-footer">
+        <el-button @click="dialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitForm">确定</el-button>
+      </span>
+    </template>
+  </el-dialog>
+
+  <el-dialog v-model="permDialogVisible" title="分配权限" width="600px">
+    <el-tree
+      ref="permTreeRef"
+      :data="permissionData"
+      :props="{ label: 'title', children: 'children' }"
+      show-checkbox
+      node-key="id"
+      default-expand-all
+    />
+    <template #footer>
+      <span class="dialog-footer">
+        <el-button @click="permDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitPermission">保存</el-button>
+      </span>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup lang="ts">
@@ -100,6 +125,15 @@
 
   const loading = ref(false);
   const roleList = ref<Role[]>([]);
+
+  const queryParams = reactive({
+    searchName: ''
+  });
+  const queryRef = ref();
+  const resetQuery = () => {
+    if (queryRef.value) queryRef.value.resetFields();
+  };
+
   const dialogVisible = ref(false);
   const isEdit = ref(false);
   const formRef = ref();
