@@ -25,7 +25,12 @@
         >
           <el-button type="primary" icon="Search" @click="fetchData">搜索</el-button>
           <el-button icon="Refresh" @click="resetQuery">重置</el-button>
-          <el-button type="primary" icon="Plus" @click="handleAdd" v-permission="'system:role:add'">
+          <el-button
+            type="primary"
+            icon="Plus"
+            @click="handleAdd"
+            v-permission="['system:role:add']"
+          >
             新增角色
           </el-button>
         </el-col>

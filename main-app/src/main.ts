@@ -9,6 +9,8 @@ import * as ElementPlusIconsVue from '@element-plus/icons-vue';
 
 import './permission'; // 引入守卫文件
 
+import { vPermission } from '@/directives/permission'; // 👈 1. 引入权限指令
+
 import ElementPlus from 'element-plus';
 import 'element-plus/dist/index.css';
 import 'element-plus/theme-chalk/dark/css-vars.css';
@@ -27,6 +29,7 @@ app.use(pinia);
 app.use(router);
 // setupRouteGuard(router);
 app.directive('debounce', vDebounce);
+app.directive('permission', vPermission);
 
 app.use(ElementPlus, {
   locale: zhCn, // 设置语言
