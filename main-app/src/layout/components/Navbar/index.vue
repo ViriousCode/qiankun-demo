@@ -26,6 +26,18 @@
         </div>
       </el-tooltip>
 
+      <div class="theme-picker">
+        <span style="font-size: 14px; margin-right: 8px; color: var(--el-text-color-regular)">
+          主题色
+        </span>
+        <el-color-picker
+          v-model="themeColor"
+          :predefine="predefineColors"
+          @change="handleThemeChange"
+          size="small"
+        />
+      </div>
+
       <div class="theme-switch">
         <el-switch
           v-model="isDark"
@@ -56,13 +68,37 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, onMounted } from 'vue';
-  import { useRouter } from 'vue-router'; // 🚨 新增：引入路由
+  // 🚨 新增引入 nextTick
+  import { ref, onMounted, nextTick } from 'vue';
+  import { useRouter } from 'vue-router';
   import { useUserStore } from '@/store/user';
   import { usePermissionStore } from '@/store/permission';
   import { ElMessageBox, ElMessage } from 'element-plus';
-  // 🚨 新增：引入 Monitor 图标
   import { Moon, Sunny, CaretBottom, Monitor } from '@element-plus/icons-vue';
+  import { setGlobalTheme } from '@/utils/theme';
+
+  const themeColor = ref(localStorage.getItem('sys-theme-color') || '#409eff');
+
+  const predefineColors = ref([
+    '#409eff', // 默认蓝
+    '#07c160', // 微信绿
+    '#f5222d', // 玫瑰红
+    '#fa541c', // 火山橘
+    '#13c2c2', // 极客蓝
+    '#722ed1', // 酱紫
+    '#eb2f96' // 猛男粉
+  ]);
+
+  // 监听拾色器变化，触发换肤
+  const handleThemeChange = (color: string | null) => {
+    if (color) {
+      setGlobalTheme(color);
+    } else {
+      // 如果用户清空了颜色，恢复默认蓝色
+      themeColor.value = '#409eff';
+      setGlobalTheme('#409eff');
+    }
+  };
 
   // 接收父组件传入的折叠状态
   defineProps<{ isCollapse: boolean }>();
@@ -71,7 +107,7 @@
 
   const userStore = useUserStore();
   const permissionStore = usePermissionStore();
-  const router = useRouter(); // 🚨 初始化 router
+  const router = useRouter();
 
   const hasPermission = (permission: string) => {
     // 1. 如果是超级管理员，直接拥有所有权限 (根据你的数据结构判断 roleKey)
@@ -82,9 +118,7 @@
     return userStore.permissions.includes(permission);
   };
 
-  // --- 新增：跳转工作台逻辑 ---
   const goToWorkbench = () => {
-    // 注意：如果你的工作台页面路由不是 '/workbench'，请在这里修改
     router.push('/workbench');
   };
 
@@ -95,7 +129,8 @@
   // --- 暗黑模式逻辑 ---
   const isDark = ref(false);
 
-  const toggleTheme = (val: boolean | string | number) => {
+  // 🚨 核心修改：改为 async 异步函数，并在切换 DOM 状态后重新计算主题色
+  const toggleTheme = async (val: boolean | string | number) => {
     const html = document.documentElement;
     if (val) {
       html.classList.add('dark');
@@ -104,11 +139,19 @@
       html.classList.remove('dark');
       localStorage.setItem('useDark', 'false');
     }
+
+    // 等待 DOM 上的 class 更新完成
+    await nextTick();
+
+    // 重新执行一遍颜色计算，确保暗色模式下不会太亮刺眼
+    const currentColor = localStorage.getItem('sys-theme-color') || '#409eff';
+    setGlobalTheme(currentColor);
   };
 
   const initTheme = () => {
     const storedTheme = localStorage.getItem('useDark');
     isDark.value = storedTheme === 'true';
+    // 初始化时也调用一次完整流程，保证初次加载颜色正确
     toggleTheme(isDark.value);
   };
 
@@ -140,6 +183,7 @@
 </script>
 
 <style scoped lang="scss">
+  /* 样式保持原样，未做修改 */
   $headerHeight: 50px;
 
   .navbar {
@@ -176,9 +220,7 @@
       display: flex;
       align-items: center;
       gap: 15px;
-      /* 这里控制右侧各元素的间距 */
 
-      /* 🚨 新增：操作图标的样式，和头像、汉堡包保持统一个风格 */
       .action-icon {
         display: flex;
         align-items: center;
