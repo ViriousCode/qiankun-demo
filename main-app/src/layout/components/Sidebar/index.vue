@@ -1,7 +1,7 @@
 <template>
   <div class="sidebar-container" :class="{ 'has-logo': true }">
     <div class="logo-wrapper">
-      <el-icon :size="24" color="#fff" style="margin-right: 10px">
+      <el-icon :size="24" color="var(--el-color-primary)" style="margin-right: 10px">
         <Platform />
       </el-icon>
       <h1 class="logo-title" v-show="!isCollapse">微前端基座</h1>
@@ -12,9 +12,6 @@
         router
         :default-active="$route.path"
         :collapse="isCollapse"
-        background-color="#304156"
-        text-color="#bfcbd9"
-        active-text-color="#409EFF"
         :unique-opened="true"
         class="el-menu-vertical"
       >
@@ -32,7 +29,6 @@
 <script setup lang="ts">
   import { usePermissionStore } from '@/store/permission';
   import { Platform } from '@element-plus/icons-vue';
-  // 引入移动到同级目录的 SidebarItem 组件
   import SidebarItem from './SidebarItem.vue';
 
   defineProps<{ isCollapse: boolean }>();
@@ -42,33 +38,32 @@
 
 <style scoped lang="scss">
   $headerHeight: 50px;
-  $menuBg: #304156;
-  $menuHover: #263445;
-  $subMenuBg: #1f2d3d;
 
   .sidebar-container {
     height: 100%;
-    background-color: $menuBg;
+    background-color: var(--el-bg-color); /* 自动适配白底/黑底 */
     transition: width 0.28s;
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    box-shadow: 2px 0 6px rgba(0, 21, 41, 0.35);
+    box-shadow: var(--el-box-shadow-light);
+    border-right: 1px solid var(--el-border-color-light);
     z-index: 1001;
   }
 
   .logo-wrapper {
     height: $headerHeight;
     line-height: $headerHeight;
-    background: #2b2f3a;
+    background: var(--el-bg-color); /* 跟随主背景 */
     text-align: center;
     overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
+    border-bottom: 1px solid var(--el-border-color-light);
 
     .logo-title {
-      color: #fff;
+      color: var(--el-text-color-primary); /* 自动适配黑字/白字 */
       font-weight: 600;
       font-size: 14px;
       font-family:
@@ -87,19 +82,28 @@
   }
 
   :deep(.el-menu) {
-    background-color: $menuBg;
+    background-color: var(--el-bg-color);
   }
 
+  /* 悬浮时的背景色适配 */
   :deep(.el-menu-item:hover),
   :deep(.el-sub-menu__title:hover) {
-    background-color: $menuHover !important;
+    background-color: var(--el-fill-color-light) !important;
   }
 
   :deep(.el-sub-menu .el-menu-item) {
-    background-color: $subMenuBg !important;
+    background-color: var(--el-bg-color) !important;
 
     &:hover {
-      background-color: #001528 !important;
+      background-color: var(--el-fill-color-light) !important;
     }
+
+    color: var(--el-text-color-regular); /* 子菜单文字略浅 */
+  }
+
+  /* 激活项的背景和文字适配 */
+  :deep(.el-menu-item.is-active) {
+    background-color: var(--el-color-primary-light-9) !important;
+    color: var(--el-color-primary);
   }
 </style>
