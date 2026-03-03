@@ -1,29 +1,46 @@
-<!-- TODO: 角色管理页面 按子应用分组-->
 <template>
-  <div class="mb-4"></div>
   <div class="action-bar">
-    <el-form ref="queryRef" :model="queryParams" @submit.prevent="fetchData">
+    <el-form ref="queryRef" :model="queryParams" @submit.prevent>
       <el-row :gutter="20">
-        <el-col :span="6" :xs="24" :sm="12" :md="8" :lg="6" :xl="3">
+        <el-col :span="6" :xs="24" :sm="12" :md="8" :lg="6" :xl="4">
+          <el-form-item prop="app">
+            <el-select
+              v-model="queryParams.app"
+              placeholder="筛选应用角色"
+              clearable
+              style="width: 100%"
+            >
+              <el-option label="全部应用" value="" />
+              <el-option
+                v-for="item in appOptions"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              />
+            </el-select>
+          </el-form-item>
+        </el-col>
+
+        <el-col :span="6" :xs="24" :sm="12" :md="8" :lg="6" :xl="4">
           <el-form-item prop="searchName">
             <el-input
               v-model="queryParams.searchName"
-              placeholder="搜索卡片名称"
+              placeholder="搜索角色名称/权限字符"
               clearable
               prefix-icon="Search"
             />
           </el-form-item>
         </el-col>
+
         <el-col
           :span="12"
           :xs="24"
           :sm="24"
-          :md="12"
-          :lg="8"
-          :xl="6"
+          :md="8"
+          :lg="12"
+          :xl="16"
           style="margin-left: auto; text-align: right; margin-bottom: 18px"
         >
-          <el-button type="primary" icon="Search" @click="fetchData">搜索</el-button>
           <el-button icon="Refresh" @click="resetQuery">重置</el-button>
           <el-button
             type="primary"
@@ -37,14 +54,23 @@
       </el-row>
     </el-form>
   </div>
+
   <div class="content-card">
-    <el-table :data="roleList" border style="width: 100%" v-loading="loading">
-      <el-table-column prop="id" label="ID" width="80" />
+    <el-table :data="filteredRoleList" border style="width: 100%" v-loading="loading">
+      <el-table-column prop="id" label="ID" width="80" align="center" />
+
+      <el-table-column prop="app" label="所属应用" width="150" align="center">
+        <template #default="scope">
+          <el-tag v-if="!scope.row.app || scope.row.app === 'main'" type="primary">主应用</el-tag>
+          <el-tag v-else type="success">{{ getAppName(scope.row.app) }}</el-tag>
+        </template>
+      </el-table-column>
+
       <el-table-column prop="roleName" label="角色名称" width="150" />
       <el-table-column prop="roleKey" label="权限字符" width="150" />
-      <el-table-column prop="description" label="描述" />
-      <el-table-column prop="createTime" label="创建时间" width="180" />
-      <el-table-column label="操作" width="250" fixed="right">
+      <el-table-column prop="description" label="描述" min-width="200" />
+      <el-table-column prop="createTime" label="创建时间" width="180" align="center" />
+      <el-table-column label="操作" width="250" fixed="right" align="center">
         <template #default="scope">
           <el-button
             link
@@ -77,8 +103,20 @@
       </el-table-column>
     </el-table>
   </div>
+
   <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑角色' : '新增角色'" width="500px">
     <el-form ref="formRef" :model="formData" :rules="rules" label-width="80px">
+      <el-form-item label="所属应用" prop="app">
+        <el-select v-model="formData.app" placeholder="请选择所属应用" style="width: 100%">
+          <el-option
+            v-for="item in appOptions"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value"
+          />
+        </el-select>
+      </el-form-item>
+
       <el-form-item label="角色名称" prop="roleName">
         <el-input v-model="formData.roleName" placeholder="请输入角色名称" />
       </el-form-item>
@@ -116,7 +154,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, reactive, onMounted, nextTick } from 'vue';
+  import { ref, reactive, computed, onMounted, nextTick } from 'vue';
   import { ElMessage, ElMessageBox, ElTree } from 'element-plus';
   import {
     getRoleList,
@@ -126,15 +164,20 @@
     getPermissionTree,
     type Role
   } from '@/api/role';
+  import { getAppList } from '@/api/app'; // 引入获取应用列表 API
   import { useUserStore } from '@/store/user';
 
   const loading = ref(false);
   const roleList = ref<Role[]>([]);
+  const appOptions = ref<any[]>([]); // 存储应用选项
 
+  // 🌟 组合查询条件
   const queryParams = reactive({
-    searchName: ''
+    searchName: '',
+    app: ''
   });
   const queryRef = ref();
+
   const resetQuery = () => {
     if (queryRef.value) queryRef.value.resetFields();
   };
@@ -144,13 +187,56 @@
   const formRef = ref();
 
   const userStore = useUserStore();
-  const initialForm = { roleName: '', roleKey: '', description: '' };
+  // 初始化表单增加 app 字段
+  const initialForm = { roleName: '', roleKey: '', description: '', app: 'main' };
   const formData = reactive<Role>({ ...initialForm });
 
   const rules = {
+    app: [{ required: true, message: '请选择所属应用', trigger: 'change' }],
     roleName: [{ required: true, message: '请输入角色名称', trigger: 'blur' }],
     roleKey: [{ required: true, message: '请输入权限字符', trigger: 'blur' }]
   };
+
+  // 🌟 加载应用列表
+  const loadAppOptions = async () => {
+    try {
+      const res = await getAppList();
+      const subApps = res || [];
+      appOptions.value = [
+        { label: '主应用 (main)', value: 'main' },
+        ...subApps.map((app: any) => ({
+          label: `${app.name} (${app.activeRule})`,
+          value: app.name
+        }))
+      ];
+    } catch (error) {
+      console.error('加载应用列表失败', error);
+    }
+  };
+
+  const getAppName = (appKey: string) => {
+    if (!appKey) return '未知';
+    const target = appOptions.value.find((opt) => opt.value === appKey);
+    // 提取括号前的干净名称用于表格展示
+    return target ? target.label.split(' ')[0] : appKey;
+  };
+
+  // 🌟 核心：纯前端计算过滤角色列表（按应用 + 名称双重过滤）
+  const filteredRoleList = computed(() => {
+    return roleList.value.filter((role) => {
+      // 1. 名称匹配 (支持搜索 roleName 和 roleKey)
+      const matchName =
+        !queryParams.searchName ||
+        role.roleName?.toLowerCase().includes(queryParams.searchName.toLowerCase()) ||
+        role.roleKey?.toLowerCase().includes(queryParams.searchName.toLowerCase());
+
+      // 2. 应用匹配 (兼容旧数据没有 app 字段的情况，默认为 main)
+      const roleApp = role.app || 'main';
+      const matchApp = !queryParams.app || roleApp === queryParams.app;
+
+      return matchName && matchApp;
+    });
+  });
 
   // 权限相关
   const permDialogVisible = ref(false);
@@ -161,31 +247,20 @@
 
   const filterTreeByPermission = (tree: any[], userPerms: string[]) => {
     const res: any[] = [];
-
     tree.forEach((node) => {
-      // 浅拷贝节点，避免修改原始引用（虽然后端返回通常是新对象，为了安全起见）
       const tempNode = { ...node };
-
-      // 1. 如果有子节点，先递归过滤子节点
       if (tempNode.children && tempNode.children.length > 0) {
         tempNode.children = filterTreeByPermission(tempNode.children, userPerms);
       }
-
-      // 2. 判断当前节点是否应该显示
-      // 条件A: 当前节点的 permission 存在于用户的权限列表中
       const hasAuth = tempNode.permission && userPerms.includes(tempNode.permission);
-
-      // 条件B: 当前节点虽无权限(或只是目录)，但其下有子节点被保留了，父节点也得留着
       const hasChildren = tempNode.children && tempNode.children.length > 0;
-
       if (hasAuth || hasChildren) {
         res.push(tempNode);
       }
     });
-
     return res;
   };
-  // 获取列表
+
   const fetchData = async () => {
     loading.value = true;
     try {
@@ -196,16 +271,21 @@
     }
   };
 
-  // CRUD 操作
   const handleAdd = () => {
     isEdit.value = false;
     Object.assign(formData, initialForm);
+    // 🌟 如果顶部筛选了具体应用，点击新增时默认带入该应用
+    if (queryParams.app) {
+      formData.app = queryParams.app;
+    }
     dialogVisible.value = true;
   };
 
   const handleEdit = (row: Role) => {
     isEdit.value = true;
     Object.assign(formData, row);
+    // 兼容历史数据，如果没有 app 字段，编辑时默认为主应用
+    if (!formData.app) formData.app = 'main';
     dialogVisible.value = true;
   };
 
@@ -234,56 +314,39 @@
       }
     });
   };
+
   const getLeafKeys = (tree: any[], targetIds: number[]) => {
     const leafKeys: number[] = [];
-
     const traverse = (nodes: any[]) => {
       nodes.forEach((node) => {
-        // 如果是叶子节点（无 children 或 children 为空），且在目标 ID 列表中
         if (!node.children || node.children.length === 0) {
           if (targetIds.includes(node.id)) {
             leafKeys.push(node.id);
           }
         } else {
-          // 如果有子节点，继续递归
           traverse(node.children);
         }
       });
     };
-
     traverse(tree);
     return leafKeys;
   };
-  // --- 权限分配核心逻辑 ---
+
   const handlePermission = async (row: Role) => {
     currentRoleId.value = row.id!;
     permissionSelectedKey.value = row.permissionIds || [];
-    // 1. 获取后端完整权限树
     const fullTree: any = await getPermissionTree();
-
-    // 2. [核心修改] 根据当前登录用户的权限进行过滤
-    // userStore.permissions 是当前登录用户拥有的权限 Code 数组 (e.g. ['system:view', ...])
-    // 如果是超级管理员(通常拥有所有权限)，过滤结果就是完整树；如果是普通用户，则只显示部分。
     let treeToShow = [];
-
     if (userStore.userInfo.roleKey === 'admin') {
-      treeToShow = fullTree; // 超级管理员拥有上帝视角
+      treeToShow = fullTree;
     } else {
       treeToShow = filterTreeByPermission(fullTree, userStore.permissions);
     }
-
     permissionData.value = treeToShow;
-
     permDialogVisible.value = true;
-
-    // 3. 回显目标角色已有的权限
     nextTick(() => {
       if (permTreeRef.value && row.permissionIds) {
-        // 这里的 filteredTree 是当前展示在 Tree 上的数据结构
-        // 我们需要从这里面筛选出哪些 ID 是叶子节点
         const leafKeys = getLeafKeys(treeToShow, row.permissionIds);
-
-        // 只设置叶子节点，父节点会自动半选/全选
         permTreeRef.value.setCheckedKeys(leafKeys);
       }
     });
@@ -291,15 +354,9 @@
 
   const submitPermission = async () => {
     if (!permTreeRef.value || !currentRoleId.value) return;
-
-    // 获取全选和半选的节点ID
     const checkedKeys = permTreeRef.value.getCheckedKeys();
     const halfCheckedKeys = permTreeRef.value.getHalfCheckedKeys();
     const allIds = [...checkedKeys, ...halfCheckedKeys];
-
-    // 这里复用 updateRole 接口来保存权限
-    // 实际项目中通常有单独的 /api/roles/:id/permissions 接口
-    // 我们这里复用之前的 put 接口，它接收 permissionIds
     const role = roleList.value.find((r) => r.id === currentRoleId.value);
     if (role) {
       await updateRole(currentRoleId.value, {
@@ -308,12 +365,17 @@
       });
       ElMessage.success('权限分配成功');
       permDialogVisible.value = false;
-      fetchData(); // 刷新列表更新本地数据
+      fetchData();
       await userStore.refreshAndSync();
     }
   };
 
   onMounted(() => {
     fetchData();
+    loadAppOptions(); // 加载应用列表
   });
 </script>
+
+<style scoped>
+  /* 继承自全局样式，组件内无需额外书写 */
+</style>

@@ -2,6 +2,7 @@ import request from '@/utils/request';
 
 export interface Role {
   id?: number;
+  app: string;
   roleName: string;
   roleKey: string;
   description?: string;
