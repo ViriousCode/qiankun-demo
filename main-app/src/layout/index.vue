@@ -8,7 +8,7 @@
 
     <div class="main-container">
       <Navbar :is-collapse="isCollapse" @toggle-click="toggleCollapse" />
-
+      <TagsView />
       <AppMain />
     </div>
   </div>
@@ -23,6 +23,7 @@
   import Sidebar from './components/Sidebar/index.vue';
   import Navbar from './components/Navbar/index.vue';
   import AppMain from './components/AppMain/index.vue';
+  import TagsView from './components/TagsView/index.vue';
 
   // --- 状态管理 ---
   const isCollapse = ref(false);
