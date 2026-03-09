@@ -17,3 +17,7 @@ interface UserInfo {
 export const getUserInfoApi = () => {
   return request.get<UserInfo>('/api/user/info');
 };
+
+export const modifyOwnPwdApi = (data: { oldPassword: string; newPassword: string }) => {
+  return request.post('/api/user/modify-password', data);
+};

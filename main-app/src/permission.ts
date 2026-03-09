@@ -24,7 +24,7 @@ router.beforeEach(async (to, from, next) => {
           // replace: true 确保路由完整替换，触发重新解析
           next({ ...to, replace: true });
         } catch (error) {
-          console.error('路由拦截发生错误:', error)
+          console.error('路由拦截发生错误:', error);
           userStore.reset();
           next(`/login?redirect=${to.path}`);
         }
@@ -45,4 +45,4 @@ router.beforeEach(async (to, from, next) => {
   }
 });
 
-router.afterEach(() => { });
+router.afterEach(() => {});

@@ -10,21 +10,21 @@ export interface MicroApp {
 }
 
 // 获取列表
-export function getAppList() {
+export const getAppList = () => {
   return request.get<MicroApp[]>('/api/apps');
-}
+};
 
 // 新增
-export function addApp(data: MicroApp) {
+export const addApp = (data: MicroApp) => {
   return request.post('/api/apps', data);
-}
+};
 
 // 修改
-export function updateApp(id: number, data: MicroApp) {
+export const updateApp = (id: number, data: MicroApp) => {
   return request.put(`/api/apps/${id}`, data);
-}
+};
 
 // 删除
-export function deleteApp(id: number) {
+export const deleteApp = (id: number) => {
   return request.delete(`/api/apps/${id}`);
-}
+};
