@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { setGlobalTheme } from '@/utils/theme';
+import { getBasicSettings } from '@/api/settings';
 
 export const useThemeStore = defineStore('theme', () => {
   const themeColor = ref(localStorage.getItem('sys-theme-color') || '#409eff');
@@ -11,8 +12,17 @@ export const useThemeStore = defineStore('theme', () => {
     setGlobalTheme(newColor);
   };
 
+  const fetchAndApplyBasicConfig = async () => {
+    const data = await getBasicSettings();
+    if (data?.themeColor) {
+      updateThemeColor(data.themeColor);
+    }
+    return data;
+  };
+
   return {
     themeColor,
-    updateThemeColor
+    updateThemeColor,
+    fetchAndApplyBasicConfig
   };
 });

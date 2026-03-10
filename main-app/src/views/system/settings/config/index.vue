@@ -27,9 +27,8 @@
 
           <el-form-item label="默认主题色">
             <el-color-picker
-              v-model="themeStore.themeColor"
+              v-model="basicForm.themeColor"
               :predefine="predefineColors"
-              @change="themeStore.updateThemeColor"
             />
           </el-form-item>
 
@@ -150,8 +149,6 @@
   const saveBasicSettings = async () => {
     try {
       loading.value = true;
-      // 同步最新主题色并在提交时带上
-      basicForm.themeColor = themeStore.themeColor;
       await updateBasicSettings(basicForm);
       ElMessage.success('基础设置保存成功');
       themeStore.updateThemeColor(basicForm.themeColor);

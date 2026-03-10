@@ -46,11 +46,13 @@
   import { ref, reactive } from 'vue';
   import { useRouter } from 'vue-router';
   import { useUserStore } from '@/store/user';
+  import { useThemeStore } from '@/store/theme';
   import { ElMessage } from 'element-plus';
   import type { FormInstance, FormRules } from 'element-plus';
 
   const router = useRouter();
   const userStore = useUserStore();
+  const themeStore = useThemeStore();
 
   const loginFormRef = ref<FormInstance>();
   const loading = ref(false);
@@ -85,6 +87,9 @@
           // 主动在这里等待权限返回，而不是交给路由守卫去“悄悄”加载。
           // 这样 Loading 动画会一直持续，用户就知道系统还在处理中。
           await userStore.getUserInfo();
+
+          // 登录后从服务端恢复基础配置（含主题色）
+          await themeStore.fetchAndApplyBasicConfig();
 
           ElMessage.success('登录成功');
 

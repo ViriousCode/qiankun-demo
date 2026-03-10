@@ -1,6 +1,7 @@
 import router from '@/router';
 import { useUserStore } from '@/store/user';
 import { usePermissionStore } from '@/store/permission';
+import { useThemeStore } from '@/store/theme';
 
 // 登录白名单
 const whiteList = ['/login'];
@@ -8,6 +9,7 @@ const whiteList = ['/login'];
 router.beforeEach(async (to, from, next) => {
   const userStore = useUserStore();
   const permissionStore = usePermissionStore();
+  const themeStore = useThemeStore();
 
   if (userStore.token) {
     if (to.path === '/login') {
@@ -17,6 +19,9 @@ router.beforeEach(async (to, from, next) => {
       if (!permissionStore.isRoutesLoaded) {
         try {
           if (!userStore.userInfo.roleId) await userStore.getUserInfo();
+
+          // 刷新/首次进入时，从服务端恢复基础配置（含主题色）
+          await themeStore.fetchAndApplyBasicConfig();
 
           // 获取并动态注入路由
           await permissionStore.generateMenus();
