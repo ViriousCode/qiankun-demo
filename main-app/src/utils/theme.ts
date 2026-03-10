@@ -5,17 +5,17 @@
  * @param weight 混合比例（0-1）
  */
 export function mixColor(color1: string, color2: string, weight: number) {
-  let r = parseInt(color1.substring(1, 3), 16);
-  let g = parseInt(color1.substring(3, 5), 16);
-  let b = parseInt(color1.substring(5, 7), 16);
+  const r = parseInt(color1.substring(1, 3), 16);
+  const g = parseInt(color1.substring(3, 5), 16);
+  const b = parseInt(color1.substring(5, 7), 16);
 
-  let r2 = parseInt(color2.substring(1, 3), 16);
-  let g2 = parseInt(color2.substring(3, 5), 16);
-  let b2 = parseInt(color2.substring(5, 7), 16);
+  const r2 = parseInt(color2.substring(1, 3), 16);
+  const g2 = parseInt(color2.substring(3, 5), 16);
+  const b2 = parseInt(color2.substring(5, 7), 16);
 
-  let rMix = Math.round(r * (1 - weight) + r2 * weight);
-  let gMix = Math.round(g * (1 - weight) + g2 * weight);
-  let bMix = Math.round(b * (1 - weight) + b2 * weight);
+  const rMix = Math.round(r * (1 - weight) + r2 * weight);
+  const gMix = Math.round(g * (1 - weight) + g2 * weight);
+  const bMix = Math.round(b * (1 - weight) + b2 * weight);
 
   return `#${rMix.toString(16).padStart(2, '0')}${gMix.toString(16).padStart(2, '0')}${bMix.toString(16).padStart(2, '0')}`;
 }
@@ -63,7 +63,7 @@ export function initTheme() {
 
   // 1. 优先恢复暗黑模式状态
   const storedDark = localStorage.getItem('sys-dark-mode');
-  let isDark = false;
+  let isDark;
 
   if (storedDark !== null) {
     // 如果用户之前手动切换过，以用户的缓存为准

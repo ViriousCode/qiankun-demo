@@ -1,12 +1,20 @@
 const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
+const path = require("path");
+const fs = require("fs");
 
 const app = express();
 const PORT = 3000;
 
+const uploadsDir = path.join(__dirname, "uploads");
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
 app.use(cors());
-app.use(bodyParser.json());
+app.use(bodyParser.json({ limit: "10mb" }));
+app.use("/uploads", express.static(uploadsDir));
 
 // =======================
 // 1. 模拟数据库 (内存数据)
@@ -238,6 +246,64 @@ let menuList = [
               },
             ],
           },
+          {
+            id: 25,
+            parentId: 2,
+            title: "系统设置",
+            permission: "system:setting:list",
+            path: "/system/setting",
+            icon: "Setting",
+            type: "menu",
+            app: "main",
+            children: [
+              {
+                id: 251,
+                parentId: 25,
+                title: "基础设置",
+                path: "/system/settings/config",
+                icon: "Operation",
+                sort: 1,
+                permission: "system:config:view",
+                type: "menu",
+                app: "main",
+                children: [
+                  { id: 2511, parentId: 251, title: "保存基础设置", permission: "system:config:edit", type: "button", app: "main" }
+                ]
+              },
+              {
+                id: 252,
+                parentId: 25,
+                title: "系统字典",
+                path: "/system/settings/dict",
+                icon: "Collection",
+                sort: 2,
+                permission: "system:dict:list",
+                type: "menu",
+                app: "main",
+                children: [
+                  { id: 2521, parentId: 252, title: "新增字典", permission: "system:dict:add", type: "button", app: "main" },
+                  { id: 2522, parentId: 252, title: "修改字典", permission: "system:dict:edit", type: "button", app: "main" },
+                  { id: 2523, parentId: 252, title: "删除字典", permission: "system:dict:remove", type: "button", app: "main" }
+                ]
+              },
+              {
+                id: 253,
+                parentId: 25,
+                title: "故障码管理",
+                path: "/system/settings/daultDict",
+                icon: "Warning",
+                sort: 3,
+                permission: "system:fault:list",
+                type: "menu",
+                app: "main",
+                children: [
+                  { id: 2531, parentId: 253, title: "新增故障码", permission: "system:fault:add", type: "button", app: "main" },
+                  { id: 2532, parentId: 253, title: "修改故障码", permission: "system:fault:edit", type: "button", app: "main" },
+                  { id: 2533, parentId: 253, title: "删除故障码", permission: "system:fault:remove", type: "button", app: "main" }
+                ]
+              }
+            ]
+          }
         ],
       },
     ],
@@ -340,7 +406,7 @@ let roles = [
     // 权限ID列表 (对应 menuList 中的 id)
     permissionIds: [
       -1, 1, 2, 21, 211, 212, 213, 22, 221, 222, 223, 23, 231, 232, 233, 24,
-      241, 242, 243, 3, 31, 311, 312, 313, 314, 315, 316, 32,
+      241, 242, 243, 25, 251, 2511, 252, 2521, 2522, 2523, 253, 2531, 2532, 2533, 3, 31, 311, 312, 313, 314, 315, 316, 32,
     ],
     createTime: "2023-01-01 12:00:00",
   },
@@ -701,4 +767,140 @@ app.delete("/api/workbench/:id", (req, res) => {
   } else {
     res.status(404).json({ code: 404, msg: "数据不存在" });
   }
+});
+
+// =======================
+// 系统设置、字典、故障码 API
+// =======================
+
+// --- 基础配置数据 ---
+let basicConfig = {
+  systemName: "微前端基座系统",
+  logo: "",
+  themeColor: "#409eff",
+  layout: "side"
+};
+
+let securityConfig = {
+  defaultPassword: "Password123!",
+  minLength: 8,
+  complexity: ["uppercase", "lowercase", "number"],
+  expireDays: 90,
+  maxFailures: 5
+};
+
+// 获取基础设置
+app.get("/api/settings/basic", (req, res) => {
+  res.json({ code: 200, data: basicConfig, msg: "success" });
+});
+// 修改基础设置
+app.put("/api/settings/basic", (req, res) => {
+  basicConfig = { ...basicConfig, ...req.body };
+  res.json({ code: 200, msg: "基础设置保存成功" });
+});
+
+// 获取安全策略
+app.get("/api/settings/security", (req, res) => {
+  res.json({ code: 200, data: securityConfig, msg: "success" });
+});
+// 修改安全策略
+app.put("/api/settings/security", (req, res) => {
+  securityConfig = { ...securityConfig, ...req.body };
+  res.json({ code: 200, msg: "安全策略保存成功" });
+});
+
+
+// --- 系统字典数据 ---
+let dictList = [
+  { id: 1, dictName: "用户性别", dictType: "sys_user_sex", status: 1, remark: "用户性别列表", createTime: "2023-10-01 10:00:00" },
+  { id: 2, dictName: "系统状态", dictType: "sys_normal_disable", status: 1, remark: "系统开关状态", createTime: "2023-10-01 10:00:00" }
+];
+
+app.get("/api/dict", (req, res) => {
+  res.json({ code: 200, data: dictList, msg: "success" });
+});
+app.post("/api/dict", (req, res) => {
+  const newItem = { id: Date.now(), createTime: new Date().toLocaleString(), ...req.body };
+  dictList.push(newItem);
+  res.json({ code: 200, msg: "新增字典成功" });
+});
+app.put("/api/dict/:id", (req, res) => {
+  const id = parseInt(req.params.id);
+  const idx = dictList.findIndex(item => item.id === id);
+  if (idx !== -1) {
+    dictList[idx] = { ...dictList[idx], ...req.body };
+    res.json({ code: 200, msg: "修改字典成功" });
+  } else {
+    res.status(404).json({ code: 404, msg: "字典不存在" });
+  }
+});
+app.delete("/api/dict/:id", (req, res) => {
+  const id = parseInt(req.params.id);
+  dictList = dictList.filter(item => item.id !== id);
+  res.json({ code: 200, msg: "删除字典成功" });
+});
+
+
+// --- 故障码数据（含 status、updateTime、remark；level 与前端统一为 '1'～'4'）---
+let faultList = [
+  { id: 1, faultCode: "ERR_SYS_001", faultName: "数据库连接超时", level: "3", status: 1, remark: "检查数据库服务是否正常启动", createTime: "2023-10-05 14:00:00", updateTime: "2023-10-05 14:00:00" },
+  { id: 2, faultCode: "WARN_NET_002", faultName: "网络波动导致包丢失", level: "2", status: 1, remark: "联系网络管理员排查路由节点", createTime: "2023-10-05 15:30:00", updateTime: "2023-10-05 15:30:00" }
+];
+
+app.get("/api/fault", (req, res) => {
+  const { name, level } = req.query;
+  let list = [...faultList];
+  if (name && String(name).trim()) {
+    const n = String(name).trim().toLowerCase();
+    list = list.filter(item => (item.faultName || "").toLowerCase().includes(n) || (item.faultCode || "").toLowerCase().includes(n));
+  }
+  if (level && String(level).trim()) {
+    list = list.filter(item => String(item.level) === String(level));
+  }
+  res.json({ code: 200, data: list, msg: "success" });
+});
+app.post("/api/fault", (req, res) => {
+  const now = new Date().toLocaleString();
+  const newItem = { id: Date.now(), createTime: now, updateTime: now, status: 1, ...req.body };
+  faultList.push(newItem);
+  res.json({ code: 200, msg: "新增故障码成功", data: newItem });
+});
+app.put("/api/fault/:id", (req, res) => {
+  const id = parseInt(req.params.id);
+  const idx = faultList.findIndex(item => item.id === id);
+  if (idx !== -1) {
+    faultList[idx] = { ...faultList[idx], ...req.body, updateTime: new Date().toLocaleString() };
+    res.json({ code: 200, msg: "修改故障码成功" });
+  } else {
+    res.status(404).json({ code: 404, msg: "故障码不存在" });
+  }
+});
+app.delete("/api/fault/:id", (req, res) => {
+  const id = parseInt(req.params.id);
+  faultList = faultList.filter(item => item.id !== id);
+  res.json({ code: 200, msg: "删除故障码成功" });
+});
+app.post("/api/fault/batch-delete", (req, res) => {
+  const ids = Array.isArray(req.body.ids) ? req.body.ids : (req.body.ids ? [req.body.ids] : []);
+  const numIds = ids.map(id => parseInt(id)).filter(n => !isNaN(n));
+  const before = faultList.length;
+  faultList = faultList.filter(item => !numIds.includes(item.id));
+  const deleted = before - faultList.length;
+  res.json({ code: 200, msg: "批量删除成功", data: { deleted } });
+});
+
+// --- Logo 上传（可选：JSON body 传 base64 + filename，返回 url）---
+app.post("/api/upload", (req, res) => {
+  const { base64, filename } = req.body || {};
+  if (!base64 || !filename) {
+    return res.status(400).json({ code: 400, msg: "缺少 base64 或 filename" });
+  }
+  const base64Data = base64.replace(/^data:image\/\w+;base64,/, "");
+  const buf = Buffer.from(base64Data, "base64");
+  const ext = path.extname(filename) || ".png";
+  const name = (path.basename(filename, ext) || "logo") + "_" + Date.now() + ext;
+  const filePath = path.join(uploadsDir, name);
+  fs.writeFileSync(filePath, buf);
+  const url = "/uploads/" + name;
+  res.json({ code: 200, data: { url }, msg: "上传成功" });
 });

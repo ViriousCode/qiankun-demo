@@ -26,18 +26,6 @@
         </div>
       </el-tooltip>
 
-      <div class="theme-picker">
-        <span style="font-size: 14px; margin-right: 8px; color: var(--el-text-color-regular)">
-          主题色
-        </span>
-        <el-color-picker
-          v-model="themeColor"
-          :predefine="predefineColors"
-          @change="handleThemeChange"
-          size="small"
-        />
-      </div>
-
       <div class="theme-switch">
         <el-switch
           v-model="isDark"
@@ -59,12 +47,14 @@
         <template #dropdown>
           <el-dropdown-menu>
             <el-dropdown-item command="profile">个人中心</el-dropdown-item>
+            <el-dropdown-item divided command="modifyPwd">修改密码</el-dropdown-item>
             <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
           </el-dropdown-menu>
         </template>
       </el-dropdown>
     </div>
   </div>
+  <ModifyPassword ref="pwdRef" />
 </template>
 
 <script setup lang="ts">
@@ -73,32 +63,12 @@
   import { useRouter } from 'vue-router';
   import { useUserStore } from '@/store/user';
   import { usePermissionStore } from '@/store/permission';
+  import { useThemeStore } from '@/store/theme';
   import { ElMessageBox, ElMessage } from 'element-plus';
   import { Moon, Sunny, CaretBottom, Monitor } from '@element-plus/icons-vue';
-  import { setGlobalTheme } from '@/utils/theme';
+  import ModifyPassword from '@/components/ModifyPassword.vue';
 
-  const themeColor = ref(localStorage.getItem('sys-theme-color') || '#409eff');
-
-  const predefineColors = ref([
-    '#409eff', // 默认蓝
-    '#07c160', // 微信绿
-    '#f5222d', // 玫瑰红
-    '#fa541c', // 火山橘
-    '#13c2c2', // 极客蓝
-    '#722ed1', // 酱紫
-    '#eb2f96' // 猛男粉
-  ]);
-
-  // 监听拾色器变化，触发换肤
-  const handleThemeChange = (color: string | null) => {
-    if (color) {
-      setGlobalTheme(color);
-    } else {
-      // 如果用户清空了颜色，恢复默认蓝色
-      themeColor.value = '#409eff';
-      setGlobalTheme('#409eff');
-    }
-  };
+  const themeStore = useThemeStore();
 
   // 接收父组件传入的折叠状态
   defineProps<{ isCollapse: boolean }>();
@@ -134,31 +104,37 @@
     const html = document.documentElement;
     if (val) {
       html.classList.add('dark');
-      localStorage.setItem('useDark', 'true');
+      // 🌟 修复：统一使用 sys-dark-mode
+      localStorage.setItem('sys-dark-mode', 'true');
     } else {
       html.classList.remove('dark');
-      localStorage.setItem('useDark', 'false');
+      // 🌟 修复：统一使用 sys-dark-mode
+      localStorage.setItem('sys-dark-mode', 'false');
     }
 
-    // 等待 DOM 上的 class 更新完成
     await nextTick();
-
-    // 重新执行一遍颜色计算，确保暗色模式下不会太亮刺眼
-    const currentColor = localStorage.getItem('sys-theme-color') || '#409eff';
-    setGlobalTheme(currentColor);
+    const currentColor = themeStore.themeColor;
+    themeStore.updateThemeColor(currentColor);
   };
 
-  const initTheme = () => {
-    const storedTheme = localStorage.getItem('useDark');
-    isDark.value = storedTheme === 'true';
-    // 初始化时也调用一次完整流程，保证初次加载颜色正确
-    toggleTheme(isDark.value);
+  const syncThemeState = () => {
+    const storedDark = localStorage.getItem('sys-dark-mode');
+    if (storedDark !== null) {
+      isDark.value = storedDark === 'true';
+    } else {
+      // 兼容系统默认状态
+      isDark.value = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
   };
 
+  const pwdRef = ref();
   // --- 用户操作逻辑 ---
   const handleCommand = (command: string) => {
     if (command === 'logout') {
       handleLogout();
+    } else if (command === 'modifyPwd') {
+      // 🌟 调用子组件暴露出的 open 方法
+      pwdRef.value?.open();
     } else if (command === 'profile') {
       ElMessage.info('开发中...');
     }
@@ -178,7 +154,7 @@
   };
 
   onMounted(() => {
-    initTheme();
+    syncThemeState();
   });
 </script>
 
