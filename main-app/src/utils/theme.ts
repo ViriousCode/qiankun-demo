@@ -60,25 +60,9 @@ export function setGlobalTheme(color: string) {
  */
 export function initTheme() {
   const el = document.documentElement;
-
-  // 1. 优先恢复暗黑模式状态
-  const storedDark = localStorage.getItem('sys-dark-mode');
-  let isDark;
-
-  if (storedDark !== null) {
-    // 如果用户之前手动切换过，以用户的缓存为准
-    isDark = storedDark === 'true';
-  } else {
-    // 如果没有缓存，通过原生 API 探测操作系统是否处于暗黑模式
-    isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-  }
-
-  // 给 html 标签打上/移除 dark 标识
-  if (isDark) {
-    el.classList.add('dark');
-  } else {
-    el.classList.remove('dark');
-  }
+  // 统一禁用暗黑模式：移除暗黑 class，并清理历史缓存，避免系统主题或旧缓存干扰
+  el.classList.remove('dark');
+  localStorage.removeItem('sys-dark-mode');
 
   // 2. 恢复自定义主题色
   const savedColor = localStorage.getItem('sys-theme-color');

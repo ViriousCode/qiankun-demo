@@ -1,0 +1,322 @@
+@use './scss/px2vw' as *;
+
+@font-face {
+  font-family: 'DOUYINSANSBOLD';
+  src:
+    local('Douyin Sans Bold'),
+    local('DOUYINSANSBOLD'),
+    url('./fonts/DouyinSansBold.otf.txt') format('opentype');
+  font-display: swap;
+  font-weight: normal;
+  font-style: normal;
+}
+
+:root {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color-scheme: light;
+  color: #213547;
+  background-color: #ffffff;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  --el-color-primary: #1890ff;
+  --el-color-success: #52c41a;
+  --el-color-warning: #faad14;
+  --el-color-danger: #f5222d;
+  --el-color-info: #8c8c8c;
+
+  /* 全局滚动条样式 */
+  --scrollbar-size: 8px;
+  --scrollbar-thumb: rgba(0, 0, 0, 0.18);
+  --scrollbar-thumb-hover: rgba(0, 0, 0, 0.28);
+  --scrollbar-track: rgba(0, 0, 0, 0.06);
+}
+
+/* WebKit (Chromium/Safari/Edge) */
+*::-webkit-scrollbar {
+  width: var(--scrollbar-size);
+  height: var(--scrollbar-size);
+}
+*::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+  border-radius: 999px;
+  display: none;
+}
+*::-webkit-scrollbar-button {
+  display: none;
+}
+*::-webkit-scrollbar-corner {
+  display: none;
+}
+*::-webkit-resizer {
+  display: none;
+}
+*::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-thumb-hover);
+}
+
+/* 全局统一 box-sizing，避免 padding/width 计算不一致 */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+a {
+  font-weight: 500;
+  color: #646cff;
+  text-decoration: inherit;
+}
+
+a:hover {
+  color: #535bf2;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+}
+
+h1 {
+  font-size: 3.2em;
+  line-height: 1.1;
+}
+
+button {
+  border-radius: 8px;
+  border: 1px solid transparent;
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: #1a1a1a;
+  cursor: pointer;
+  transition: border-color 0.25s;
+}
+
+button:hover {
+  border-color: #646cff;
+}
+
+button:focus,
+button:focus-visible {
+  outline: 4px auto -webkit-focus-ring-color;
+}
+
+.card {
+  padding: 2em;
+}
+
+a:hover {
+  color: #747bff;
+}
+
+button {
+  background-color: #f9f9f9;
+}
+
+.icon-svg {
+  width: 20px;
+  height: 20px;
+  vertical-align: -0.15em;
+  fill: currentColor;
+  overflow: hidden;
+}
+
+/* -----------------------------------
+ * 公共布局样式 (Layout Styles)
+ * ----------------------------------- */
+.page-container {
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  padding: px2vw(20) px2vw(40) px2vw(28) px2vw(40);
+  min-height: calc(100vh - 66px);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+
+  .page-title {
+    font-family:
+      PingFangSC,
+      PingFang SC;
+    font-weight: 500;
+    font-size: px2vw(20);
+    color: #333333;
+    line-height: px2vw(28);
+    margin: 0;
+  }
+
+  .page-card {
+    flex-shrink: 0;
+  }
+
+  .page-card,
+  .filter-card {
+    flex: 1;
+    min-height: 0;
+    background: #fff;
+    border-radius: px2vw(8);
+    border: 1px solid #e5e5e5;
+    padding: px2vw(32);
+    box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    margin-top: px2vw(28);
+  }
+
+  .query-btns .el-form-item {
+    margin-bottom: 18px;
+  }
+
+  .page-table {
+    margin-top: 16px;
+  }
+
+  /*
+   * Element Plus 在横向滚动接近最右侧时，会用 is-scrolling-right 提前“认为已到最右”，
+   * 导致 fixed-right 的阴影/边框在还差 1px 时消失。这里做一个视觉兜底：
+   * - 右侧边框始终保留 1px（避免被滚动容器裁掉/取整吞掉）
+   * - fixed="right" 区域始终保留阴影（避免 1px 误差导致提前消失）
+   */
+  .el-table.el-table--border {
+    .el-table__inner-wrapper {
+      position: relative;
+    }
+
+    .el-table__inner-wrapper::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 1px;
+      height: 100%;
+      background: var(--el-border-color-lighter);
+      pointer-events: none;
+    }
+
+    /*
+     * 只做“边框兜底”：避免横向滚动接近边界时 1px 分隔线被吞。
+     * 阴影保持 Element Plus 默认行为：能继续滚动时显示，真正到最右时消失。
+     */
+    .el-table-fixed-column--right.is-first-column.el-table__cell {
+      border-left: var(--el-table-border);
+    }
+  }
+
+  .el-table__header th {
+    background: #0055ff;
+    color: #667085;
+    font-weight: 500;
+    text-align: center;
+  }
+
+  .pagination-container {
+    margin-top: 16px;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .query-btns {
+    margin-left: auto;
+    text-align: right;
+  }
+}
+
+.info-icon {
+  width: 12px;
+  height: 12px;
+  background: url(@/assets/image/common/icon_info.svg) no-repeat center center;
+  background-size: 100% 100%;
+  cursor: pointer;
+}
+
+/*
+ * .page-container .el-table__header th { text-align: center } 会压过列上的 is-left / header-align。
+ * 放在 .page-container 外，弹窗内表格也可生效。使用方式：
+ *   <el-table class="page-table page-table--respect-column-align" ...>
+ */
+.page-table--respect-column-align.el-table,
+.el-table.page-table--respect-column-align {
+  .el-table__header th.el-table__cell:not(.is-center):not(.is-right),
+  .el-table__body td.el-table__cell:not(.is-center):not(.is-right),
+  .el-table__footer td.el-table__cell:not(.is-center):not(.is-right) {
+    text-align: left !important;
+  }
+
+  .el-table__body td.el-table__cell:not(.is-center):not(.is-right) .cell {
+    text-align: left !important;
+  }
+}
+
+/* -----------------------------------
+ * Element Plus overlay scoped to app-main
+ * ----------------------------------- */
+.app-main {
+  /* When dialogs/drawers are not teleported, this keeps the overlay within app-main */
+  .el-overlay {
+    position: absolute !important;
+    inset: 0 !important;
+  }
+
+  /* Center dialog/drawer within app-main */
+  .el-overlay {
+    .el-overlay-dialog {
+      position: absolute !important;
+      inset: 0 !important;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      pointer-events: auto;
+    }
+
+    /* Restore click handling on the actual panel */
+    .el-dialog,
+    .el-drawer {
+      pointer-events: auto;
+    }
+
+    /* Element Plus default uses margins for centering; remove to avoid offset */
+    .el-dialog {
+      margin: 0 !important;
+    }
+  }
+}
+
+/* -----------------------------------
+ * Element Plus plain button overrides
+ * ----------------------------------- */
+.el-button {
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 22px;
+  font-family:
+    PingFangSC,
+    PingFang SC;
+}
+
+.el-button--primary.is-plain {
+  background: #ecf5ff;
+  border: 1px solid #409eff;
+  color: #409eff;
+}
+
+.app-filter-panel {
+  width: 100%;
+  background: rgba(246, 247, 251, 1);
+  height: 72px;
+  padding: 20px 24px;
+  border-radius: 4px;
+}

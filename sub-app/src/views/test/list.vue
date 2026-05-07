@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="test-list">
     <h1>test1</h1>
     <div class="prim-test">
       <div v-permission="'sub:test:add'">增</div>
@@ -14,6 +14,18 @@
 <script lang="ts" setup>
 </script>
 <style scoped lang="scss">
+.test-list {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  height: 100vh;
+}
+
+h1 {
+  background: rebeccapurple;
+  width: 90vw;
+}
+
 .prim-test {
   display: flex;
   justify-content: space-around;

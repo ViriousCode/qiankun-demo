@@ -1,342 +1,168 @@
 <template>
-  <div class="app-container">
-    <el-card shadow="never" class="search-wrapper">
-      <el-form :inline="true" :model="queryParams">
-        <el-form-item label="故障名称">
-          <el-input
-            v-model="queryParams.name"
-            placeholder="请输入故障名称"
-            clearable
-            @keyup.enter="handleQuery"
-          />
-        </el-form-item>
-        <el-form-item label="故障等级">
-          <el-select v-model="queryParams.level" placeholder="全部" clearable style="width: 150px">
-            <el-option label="提示" value="1" />
-            <el-option label="一般" value="2" />
-            <el-option label="严重" value="3" />
-            <el-option label="致命" value="4" />
-          </el-select>
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" :icon="Search" @click="handleQuery">查询</el-button>
-          <el-button :icon="Refresh" @click="resetQuery">重置</el-button>
-        </el-form-item>
-      </el-form>
-    </el-card>
-
-    <el-card shadow="never" class="table-wrapper">
-      <template #header>
-        <div class="table-header">
-          <el-button type="primary" :icon="Plus" @click="handleAdd">新增字典</el-button>
-          <el-button
-            type="danger"
-            :icon="Delete"
-            :disabled="!ids.length"
-            @click="handleBatchDelete"
-          >
-            批量删除
+  <div class="page-container">
+    <h2 class="page-title">故障码管理</h2>
+    <div class="page-card" ref="pageCardRef">
+      <div ref="tableTopRef">
+        <el-form :model="queryParams" @submit.prevent="handleSearch">
+          <el-row :gutter="20">
+            <el-col :span="6" :xs="24" :sm="12" :md="8" :lg="6" :xl="6">
+              <el-form-item label="故障码">
+                <el-input v-model="queryParams.faultCode" placeholder="请输入故障码" clearable @keyup.enter="handleSearch" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="6" :xs="24" :sm="12" :md="8" :lg="6" :xl="6">
+              <el-form-item label="故障分类">
+                <el-input v-model="queryParams.faultCategory" placeholder="请输入故障名称" clearable
+                  @keyup.enter="handleSearch" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="6" :xs="24" :sm="12" :md="8" :lg="6" :xl="6">
+              <el-form-item label="故障级别">
+                <el-select v-model="queryParams.faultLevel" placeholder="全部" clearable style="width: 100%">
+                  <el-option label="提示" value="1">
+                    <el-tag type="info">提示</el-tag>
+                  </el-option>
+                  <el-option label="警告" value="2">
+                    <el-tag type="warning">警告</el-tag>
+                  </el-option>
+                  <el-option label="严重" value="3">
+                    <el-tag type="danger">严重</el-tag>
+                  </el-option>
+                </el-select>
+              </el-form-item>
+            </el-col>
+            <el-col :xs="24" :sm="12" :md="8" :lg="6" :xl="3" class="query-btns">
+              <el-button type="primary" @click="handleSearch">查询</el-button>
+              <el-button @click="resetQuery">重置</el-button>
+            </el-col>
+          </el-row>
+        </el-form>
+        <div class="add-row">
+          <el-button type="primary" plain @click="handleAdd" v-permission="PERMS.FAULT.ADD">
+            新增
           </el-button>
         </div>
-      </template>
+      </div>
 
-      <el-table
-        v-loading="loading"
-        :data="tableData"
-        border
-        @selection-change="handleSelectionChange"
-      >
-        <el-table-column type="selection" width="55" align="center" />
-        <el-table-column
-          type="index"
-          label="序号"
-          width="70"
-          align="center"
-          :index="calculateIndex"
-        />
-        <el-table-column prop="faultCode" label="故障代码" width="120" align="center" />
-        <el-table-column prop="faultName" label="故障名称" min-width="150" show-overflow-tooltip />
-        <el-table-column prop="level" label="故障等级" width="100" align="center">
+      <el-table class="page-table page-table--respect-column-align" v-loading="loading" :data="tableData" border
+        :max-height="tableMaxHeight">
+        <template #empty>
+          <TableEmpty />
+        </template>
+        <el-table-column type="index" label="序号" width="70" align="left" header-align="left" :index="calculateIndex" />
+        <el-table-column prop="faultCode" label="故障码" width="120" align="left" header-align="left" />
+        <el-table-column prop="faultCategory" label="故障名称" min-width="150" align="left" header-align="left"
+          show-overflow-tooltip />
+        <el-table-column label="故障等级" width="100" align="center" header-align="center">
           <template #default="{ row }">
-            <el-tag :type="getLevelType(row.level)">{{ getLevelLabel(row.level) }}</el-tag>
+            <el-tag :type="getLevelType(row.faultLevel)">
+              {{ getLevelLabel(row.faultLevel) }}
+            </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="status" label="状态" width="100" align="center">
+        <el-table-column prop="suggestion" label="处理建议" min-width="200" align="left" header-align="left"
+          show-overflow-tooltip />
+        <el-table-column label="状态" width="100" align="center" header-align="center">
           <template #default="{ row }">
-            <el-switch
-              v-model="row.status"
-              :active-value="1"
-              :inactive-value="0"
-              @change="handleStatusChange(row)"
-            />
+            <OpPopSwitch v-permission="PERMS.FAULT.EDIT" :model-value="row.status === 1" :title="faultToggleTitle(row)"
+              @confirm="toggleStatus(row, row.status !== 1)" />
           </template>
         </el-table-column>
-        <el-table-column prop="updateTime" label="更新时间" width="180" align="center" />
-        <el-table-column label="操作" width="180" align="center" fixed="right">
+        <el-table-column label="操作" width="180" align="left" header-align="left" fixed="right">
           <template #default="{ row }">
-            <el-button link type="primary" @click="handleEdit(row)">修改</el-button>
-            <el-button link type="danger" @click="handleDelete(row)">删除</el-button>
+            <el-button link type="primary" @click="handleEdit(row)" v-permission="PERMS.FAULT.EDIT">
+              编辑
+            </el-button>
+            <el-popconfirm :title="`确认删除故障「${row.faultCategory}」吗？`" width="260" confirm-button-text="确定"
+              cancel-button-text="取消" :icon="WarningFilled" icon-color="#E6A23C" @confirm="handleDelete(row)">
+              <template #reference>
+                <el-button link type="danger" v-permission="PERMS.FAULT.DEL">删除</el-button>
+              </template>
+            </el-popconfirm>
           </template>
         </el-table-column>
       </el-table>
 
-      <div class="pagination-container">
-        <el-pagination
-          v-model:current-page="queryParams.pageIndex"
-          v-model:page-size="queryParams.pageSize"
-          :page-sizes="[10, 20, 50]"
-          layout="total, sizes, prev, pager, next, jumper"
-          :total="total"
-          @size-change="fetchList"
-          @current-change="fetchList"
-        />
+      <div class="pagination-container" ref="paginationRef">
+        <el-pagination v-model:current-page="queryParams.pageIndex" v-model:page-size="queryParams.pageSize"
+          :page-sizes="PAGE_SIZES" :layout="PAGINATION_LAYOUT" :total="total" @size-change="handleSearch"
+          @current-change="handleSearch" />
       </div>
-    </el-card>
-
-    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="500px">
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
-        <el-form-item label="故障代码" prop="faultCode">
-          <el-input v-model="form.faultCode" placeholder="如：ERR-001" :disabled="!!form.id" />
-        </el-form-item>
-        <el-form-item label="故障名称" prop="faultName">
-          <el-input v-model="form.faultName" placeholder="请输入名称" />
-        </el-form-item>
-        <el-form-item label="故障等级" prop="level">
-          <el-radio-group v-model="form.level">
-            <el-radio label="1">提示</el-radio>
-            <el-radio label="2">一般</el-radio>
-            <el-radio label="3">严重</el-radio>
-            <el-radio label="4">致命</el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="备注" prop="remark">
-          <el-input v-model="form.remark" type="textarea" placeholder="请输入详细描述" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="submitLoading" @click="submitForm">确定</el-button>
-      </template>
-    </el-dialog>
+    </div>
   </div>
+
+  <FaultFormDialog v-model="dialogVisible" :title="dialogTitle" :form="form" :rules="rules" :loading="submitLoading"
+    @submit="submitForm" />
 </template>
 
 <script setup lang="ts">
-  import { ref, reactive, onMounted, computed } from 'vue';
-  import { Search, Refresh, Plus, Delete } from '@element-plus/icons-vue';
-  import { ElMessage, ElMessageBox } from 'element-plus';
-  import {
-    getFaultList,
-    addFault,
-    updateFault,
-    deleteFault,
-    batchDeleteFault,
-    type FaultItem
-  } from '@/api/fault';
+import { ref } from 'vue';
+import { ElMessage } from 'element-plus';
+import { WarningFilled } from '@element-plus/icons-vue';
+import { PERMS } from '@/constants/permissions';
+import OpPopSwitch from '@/components/OpPopSwitch.vue';
+import { PAGE_SIZES, PAGINATION_LAYOUT } from '@/config';
+import { updateFault } from '@/api/fault';
+import { useElTableAutoMaxHeight } from '@/hooks/useElTableAutoMaxHeight';
+import FaultFormDialog from './components/FaultFormDialog.vue';
+import { useFaultList } from './useFaultList';
+import { useFaultForm } from './useFaultForm';
+import { getLevelLabel, getLevelType } from './constants';
 
-  const loading = ref(false);
-  const fullList = ref<FaultItem[]>([]);
-  const total = ref(0);
-  const ids = ref<number[]>([]);
-  const dialogVisible = ref(false);
-  const dialogTitle = ref('');
-  const submitLoading = ref(false);
-  const formRef = ref();
+const pageCardRef = ref<HTMLElement | null>(null);
+const tableTopRef = ref<HTMLElement | null>(null);
+const paginationRef = ref<HTMLElement | null>(null);
+const { tableMaxHeight } = useElTableAutoMaxHeight({
+  containerRef: pageCardRef,
+  subtractRefs: [tableTopRef, paginationRef],
+  extraOffset: 24
+});
 
-  const queryParams = reactive({
-    pageIndex: 1,
-    pageSize: 10,
-    name: '',
-    level: ''
-  });
+const {
+  loading,
+  tableData,
+  total,
+  queryParams,
+  fetchData,
+  handleSearch,
+  resetQuery,
+  calculateIndex
+} = useFaultList();
 
-  const form = reactive<Partial<FaultItem> & { id?: number }>({
-    id: undefined,
-    faultCode: '',
-    faultName: '',
-    level: '2',
-    status: 1,
-    remark: ''
-  });
+const {
+  dialogVisible,
+  dialogTitle,
+  form,
+  rules,
+  submitLoading,
+  handleAdd,
+  handleEdit,
+  submitForm,
+  handleDelete
+} = useFaultForm(fetchData);
 
-  const tableData = computed(() => {
-    const start = (queryParams.pageIndex - 1) * queryParams.pageSize;
-    return fullList.value.slice(start, start + queryParams.pageSize);
-  });
+const faultToggleTitle = (row: any) => {
+  const actionText = row?.status === 1 ? '禁用' : '启用';
+  const name = String(row?.faultName || row?.faultCategory || '').trim();
+  const extra = name ? `故障「${name}」` : '该故障码';
+  return `确认${actionText}${extra}吗？`;
+};
 
-  const rules = {
-    faultCode: [{ required: true, message: '代码不能为空', trigger: 'blur' }],
-    faultName: [{ required: true, message: '名称不能为空', trigger: 'blur' }]
-  };
-
-  // --- 核心方法 ---
-
-  /** 🌟 连续序号计算 **/
-  const calculateIndex = (index: number) => {
-    return (queryParams.pageIndex - 1) * queryParams.pageSize + index + 1;
-  };
-
-  const fetchList = async () => {
-    loading.value = true;
-    try {
-      const data = await getFaultList({
-        name: queryParams.name || undefined,
-        level: queryParams.level || undefined
-      });
-      fullList.value = data || [];
-      total.value = fullList.value.length;
-    } finally {
-      loading.value = false;
-    }
-  };
-
-  const handleQuery = () => {
-    queryParams.pageIndex = 1;
-    fetchList();
-  };
-
-  const resetQuery = () => {
-    queryParams.name = '';
-    queryParams.level = '';
-    handleQuery();
-  };
-
-  const getLevelLabel = (level: string) => {
-    const map: any = { '1': '提示', '2': '一般', '3': '严重', '4': '致命' };
-    return map[level] || '未知';
-  };
-
-  const getLevelType = (level: string) => {
-    const map: any = { '1': 'info', '2': 'warning', '3': 'danger', '4': 'danger' };
-    return map[level] || 'info';
-  };
-
-  const handleSelectionChange = (selection: FaultItem[]) => {
-    ids.value = selection.map((item) => item.id!).filter((id): id is number => id != null);
-  };
-
-  const handleAdd = () => {
-    dialogTitle.value = '新增故障字典';
-    Object.assign(form, {
-      id: undefined,
-      faultCode: '',
-      faultName: '',
-      level: '2',
-      status: 1,
-      remark: ''
-    });
-    dialogVisible.value = true;
-  };
-
-  const handleEdit = (row: FaultItem) => {
-    dialogTitle.value = '修改故障字典';
-    Object.assign(form, {
-      id: row.id,
-      faultCode: row.faultCode,
-      faultName: row.faultName,
-      level: String(row.level ?? '2'),
-      status: row.status ?? 1,
-      remark: row.remark ?? ''
-    });
-    dialogVisible.value = true;
-  };
-
-  const submitForm = async () => {
-    try {
-      await formRef.value?.validate();
-    } catch {
-      return;
-    }
-    submitLoading.value = true;
-    try {
-      if (form.id != null) {
-        await updateFault(form.id, {
-          faultCode: form.faultCode!,
-          faultName: form.faultName!,
-          level: form.level!,
-          remark: form.remark
-        });
-      } else {
-        await addFault({
-          faultCode: form.faultCode!,
-          faultName: form.faultName!,
-          level: form.level!,
-          remark: form.remark,
-          status: 1
-        });
-      }
-      ElMessage.success('操作成功');
-      dialogVisible.value = false;
-      fetchList();
-    } finally {
-      submitLoading.value = false;
-    }
-  };
-
-  const handleDelete = (row: FaultItem) => {
-    ElMessageBox.confirm(`确认删除故障 "${row.faultName}" 吗？`, '警告')
-      .then(async () => {
-        await deleteFault(row.id!);
-        ElMessage.success('删除成功');
-        fetchList();
-      })
-      .catch(() => {});
-  };
-
-  const handleBatchDelete = () => {
-    if (ids.value.length === 0) return;
-    ElMessageBox.confirm(`确认删除选中的 ${ids.value.length} 条故障记录吗？`, '警告', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
-      .then(async () => {
-        loading.value = true;
-        try {
-          await batchDeleteFault(ids.value);
-          ElMessage.success('批量删除成功');
-          ids.value = [];
-          fetchList();
-        } catch (error) {
-          console.error('批量删除失败', error);
-        } finally {
-          loading.value = false;
-        }
-      })
-      .catch(() => {});
-  };
-
-  const handleStatusChange = async (row: FaultItem) => {
-    const text = row.status === 1 ? '启用' : '停用';
-    try {
-      await updateFault(row.id!, { status: row.status });
-      ElMessage.success(`${text}成功`);
-    } catch (error) {
-      row.status = row.status === 1 ? 0 : 1;
-      console.error('状态修改失败', error);
-    }
-  };
-
-  onMounted(() => {
-    fetchList();
-  });
+const toggleStatus = async (row: any, nextEnabled: boolean) => {
+  if (row?.id == null) return;
+  const prevStatus = row.status;
+  const nextStatus = nextEnabled ? 1 : 0;
+  row.status = nextStatus;
+  try {
+    await updateFault(row.id, { status: nextStatus });
+    ElMessage.success(`${nextEnabled ? '启用' : '禁用'}成功`);
+    await fetchData();
+  } catch (e) {
+    row.status = prevStatus;
+    ElMessage.error('操作失败，请稍后重试');
+    throw e;
+  }
+};
 </script>
 
-<style scoped>
-  .app-container {
-    padding: 20px;
-  }
-  .search-wrapper {
-    margin-bottom: 20px;
-  }
-  .table-header {
-    display: flex;
-    justify-content: flex-start;
-    gap: 10px;
-  }
-  .pagination-container {
-    margin-top: 20px;
-    display: flex;
-    justify-content: flex-end;
-  }
-</style>
+<style scoped></style>

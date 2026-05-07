@@ -9,6 +9,21 @@ import { useUserStore } from "@/store/user";
 
 const router = useRouter();
 const route = useRoute();
+const ACTIVE_RULE = "/test-sub-app";
+
+const normalizeTargetPath = (fullPath: string) => {
+  const normalized = String(fullPath || "").trim();
+  if (!normalized) return "";
+  if (normalized === ACTIVE_RULE) return "/";
+  if (normalized.startsWith(`${ACTIVE_RULE}/`)) {
+    const inner = normalized.slice(ACTIVE_RULE.length) || "/";
+    return inner.startsWith("/") ? inner : `/${inner}`;
+  }
+  if (normalized.startsWith("/")) {
+    return normalized;
+  }
+  return `/${normalized}`;
+};
 
 // 处理主应用发来的路由通知
 const handleMicroRouteChange = (event: Event) => {
@@ -17,10 +32,11 @@ const handleMicroRouteChange = (event: Event) => {
   if (!detail || !detail.path) return;
 
   const fullPath = detail.path; // e.g., "/test-sub-app/testView2"
-
-  // 2. 掐头去尾，算出子应用内部路径
-  // 假设 activeRule 是 "/test-sub-app"，需要把它去掉
-  const targetPath = fullPath.replace("/test-sub-app", "") || "/";
+  if (fullPath !== ACTIVE_RULE && !String(fullPath).startsWith(`${ACTIVE_RULE}/`)) {
+    return;
+  }
+  const targetPath = normalizeTargetPath(fullPath);
+  if (!targetPath) return;
 
   // 3. 如果当前路径不对，就跳过去
   if (route.path !== targetPath) {

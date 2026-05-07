@@ -1,0 +1,4 @@
+// 按 1920 设计稿将 px 转为 vw，用法: width: px2vw(40);
+@function px2vw($px) {
+  @return calc(#{$px} / 1920 * 100vw);
+}

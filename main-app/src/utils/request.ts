@@ -106,7 +106,5 @@ class Request {
 
 // 导出实例
 export default new Request({
-  // 注意：这里使用 import.meta.env.VITE_BASE_URL
-  // 如果子应用以前叫 VITE_BASE_API，请去 .env 文件里改成 VITE_BASE_URL，保持一致
-  baseURL: import.meta.env.VITE_BASE_URL
+  baseURL: '/'
 });

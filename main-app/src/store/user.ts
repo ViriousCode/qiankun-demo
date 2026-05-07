@@ -11,11 +11,18 @@ export const useUserStore = defineStore('user', () => {
 
   // 🚨 【重构】：将分散的字段统一收纳到 userInfo 对象中
   const userInfo = ref({
+    gender: '',
+    deptName: '',
     userName: '',
-    roleId: '',
+    roleId: '' as string | number,
     roleKey: '',
-    avatar: '', // 预留头像字段
-    nickName: '' // 其他可能的字段
+    avatar: '',
+    nickName: '',
+    tenantId: null as number | null,
+    email: '',
+    phone: '',
+    roleNames: [] as string[],
+    orgPath: ''
   });
 
   // 辅助函数：同步状态到子应用
@@ -79,11 +86,18 @@ export const useUserStore = defineStore('user', () => {
 
       // 🚨 【重构】：统一赋值给 userInfo
       userInfo.value = {
+        gender: data.gender,
+        deptName: data.deptName,
         userName: data.userName,
-        roleId: data.roleId,
+        roleId: data.roleId ?? '',
         roleKey: data.roleKey,
         avatar: data.avatar || '',
-        nickName: data.nickName || ''
+        nickName: data.nickName || '',
+        tenantId: data.tenantId ?? null,
+        email: data.email || '',
+        phone: data.phone || '',
+        roleNames: Array.isArray(data.roleNames) ? data.roleNames : [],
+        orgPath: data.orgPath || data.deptName || ''
       };
 
       // 获取完完整信息后，同步给子应用
@@ -104,11 +118,18 @@ export const useUserStore = defineStore('user', () => {
 
     // 🚨 清空 userInfo
     userInfo.value = {
+      gender: '',
+      deptName: '',
       userName: '',
       roleId: '',
       roleKey: '',
       avatar: '',
-      nickName: ''
+      nickName: '',
+      tenantId: null,
+      email: '',
+      phone: '',
+      roleNames: [],
+      orgPath: ''
     };
 
     localStorage.removeItem('main-app-token');

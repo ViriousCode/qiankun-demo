@@ -1,239 +1,182 @@
 <template>
-  <div class="app-container">
-    <el-card shadow="never" class="search-wrapper">
-      <el-form :inline="true" :model="queryParams">
-        <el-form-item label="字典名称">
-          <el-input
-            v-model="queryParams.dictName"
-            placeholder="请输入字典名称"
-            clearable
-            @keyup.enter="handleQuery"
-          />
-        </el-form-item>
-        <el-form-item label="字典类型">
-          <el-input
-            v-model="queryParams.dictType"
-            placeholder="请输入字典类型"
-            clearable
-            @keyup.enter="handleQuery"
-          />
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" :icon="Search" @click="handleQuery">查询</el-button>
-          <el-button :icon="Refresh" @click="resetQuery">重置</el-button>
-        </el-form-item>
-      </el-form>
-    </el-card>
-
-    <el-card shadow="never" class="table-wrapper">
-      <template #header>
-        <div class="table-header">
-          <el-button
-            type="primary"
-            :icon="Plus"
-            @click="handleAdd"
-            v-permission="['system:dict:add']"
-          >
-            新增字典
+  <div class="page-container">
+    <h2 class="page-title">系统字典</h2>
+    <div class="page-card" ref="pageCardRef">
+      <div ref="tableTopRef">
+        <el-form :model="queryParams" @submit.prevent="handleSearch">
+          <el-row :gutter="20">
+            <el-col :span="6" :xs="24" :sm="12" :md="8" :lg="6" :xl="6">
+              <el-form-item label="名称">
+                <el-input v-model="queryParams.name" placeholder="请输入名称" clearable @keyup.enter="handleSearch" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="6" :xs="24" :sm="12" :md="8" :lg="6" :xl="6">
+              <el-form-item label="代码">
+                <el-input v-model="queryParams.code" placeholder="请输入代码" clearable @keyup.enter="handleSearch" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="6" :xs="24" :sm="12" :md="8" :lg="6" :xl="6">
+              <el-form-item label="所属分类">
+                <el-select v-model="queryParams.categoryCode" placeholder="全部" clearable style="width: 100%">
+                  <el-option v-for="c in categories" :key="c.id || c.categoryCode" :label="c.categoryName" :value="c.categoryCode" />
+                </el-select>
+              </el-form-item>
+            </el-col>
+            <el-col :span="6" :xs="24" :sm="12" :md="8" :lg="6" :xl="6">
+              <el-form-item label="状态">
+                <el-select v-model="queryParams.status" placeholder="全部" clearable style="width: 100%">
+                  <el-option value="1" label="启用">
+                    <StatusTag :status-key="1" variant="outline" />
+                  </el-option>
+                  <el-option value="0" label="禁用">
+                    <StatusTag :status-key="0" variant="outline" />
+                  </el-option>
+                </el-select>
+              </el-form-item>
+            </el-col>
+            <el-col :xs="24" :sm="12" :md="8" :lg="6" :xl="3" class="query-btns">
+              <el-button type="primary" @click="handleSearch">查询</el-button>
+              <el-button @click="resetQuery">重置</el-button>
+            </el-col>
+          </el-row>
+        </el-form>
+        <div class="add-row">
+          <el-button type="primary" plain @click="handleAdd" v-permission="PERMS.DICT.ADD">
+            新增
           </el-button>
+          <el-button @click="goCategory" v-permission="PERMS.DICT.EDIT">分类管理</el-button>
         </div>
-      </template>
+      </div>
 
-      <el-table v-loading="loading" :data="filteredList" border>
-        <el-table-column type="index" label="序号" width="70" align="center" />
-        <el-table-column prop="dictName" label="字典名称" min-width="120" show-overflow-tooltip />
-        <el-table-column prop="dictType" label="字典类型" min-width="140" show-overflow-tooltip />
-        <el-table-column prop="status" label="状态" width="100" align="center">
+      <el-table class="page-table page-table--respect-column-align" v-loading="loading" :data="tableData" border
+        :max-height="tableMaxHeight">
+        <template #empty>
+          <TableEmpty />
+        </template>
+        <el-table-column type="index" label="序号" width="70" align="left" header-align="left" :index="calculateIndex" />
+        <el-table-column prop="name" label="名称" min-width="120" align="left" header-align="left"
+          show-overflow-tooltip />
+        <el-table-column prop="code" label="代码" min-width="140" align="left" header-align="left"
+          show-overflow-tooltip />
+        <el-table-column prop="value" label="值" width="100" align="left" header-align="left" />
+        <el-table-column prop="sort" label="排序" width="90" align="left" header-align="left" />
+        <el-table-column prop="categoryName" label="所属分类" min-width="140" align="left" header-align="left" show-overflow-tooltip />
+        <el-table-column prop="categoryCode" label="分类代码" min-width="160" align="left" header-align="left" show-overflow-tooltip />
+        <el-table-column label="状态" width="100" align="center" header-align="center">
           <template #default="{ row }">
-            <el-tag :type="row.status === 1 ? 'success' : 'info'">
-              {{ row.status === 1 ? '正常' : '停用' }}
-            </el-tag>
+            <OpPopSwitch v-permission="PERMS.DICT.EDIT" :model-value="row.status === 1" :title="dictToggleTitle(row)"
+              @confirm="toggleStatus(row, row.status !== 1)" />
           </template>
         </el-table-column>
-        <el-table-column prop="remark" label="备注" min-width="150" show-overflow-tooltip />
-        <el-table-column prop="createTime" label="创建时间" width="180" align="center" />
-        <el-table-column label="操作" width="180" align="center" fixed="right">
+        <el-table-column label="操作" width="180" align="left" header-align="left" fixed="right">
           <template #default="{ row }">
-            <el-button
-              link
-              type="primary"
-              @click="handleEdit(row)"
-              v-permission="['system:dict:edit']"
-            >
-              修改
+            <el-button link type="primary" @click="handleEdit(row)" v-permission="PERMS.DICT.EDIT">
+              编辑
             </el-button>
-            <el-button
-              link
-              type="danger"
-              @click="handleDelete(row)"
-              v-permission="['system:dict:remove']"
-            >
-              删除
-            </el-button>
+            <el-popconfirm :title="`确认删除字典「${row.name}」吗？`" width="260" confirm-button-text="确定"
+              cancel-button-text="取消" :icon="WarningFilled" icon-color="#E6A23C" @confirm="handleDelete(row)">
+              <template #reference>
+                <el-button link type="danger" v-permission="PERMS.DICT.DEL">删除</el-button>
+              </template>
+            </el-popconfirm>
           </template>
         </el-table-column>
       </el-table>
-    </el-card>
 
-    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="500px">
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
-        <el-form-item label="字典名称" prop="dictName">
-          <el-input v-model="form.dictName" placeholder="请输入字典名称" />
-        </el-form-item>
-        <el-form-item label="字典类型" prop="dictType">
-          <el-input v-model="form.dictType" placeholder="如：sys_user_sex" />
-        </el-form-item>
-        <el-form-item label="状态" prop="status">
-          <el-radio-group v-model="form.status">
-            <el-radio :value="1">正常</el-radio>
-            <el-radio :value="0">停用</el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="备注" prop="remark">
-          <el-input v-model="form.remark" type="textarea" placeholder="请输入备注" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="submitLoading" @click="submitForm">确定</el-button>
-      </template>
-    </el-dialog>
+      <div class="pagination-container" ref="paginationRef">
+        <el-pagination v-model:current-page="queryParams.pageIndex" v-model:page-size="queryParams.pageSize"
+          :page-sizes="PAGE_SIZES" :layout="PAGINATION_LAYOUT" :total="total" />
+      </div>
+    </div>
   </div>
+
+  <DictFormDialog v-model="dialogVisible" :title="dialogTitle" :form="form" :categories="categories" :rules="rules"
+    :loading="submitLoading" @submit="submitForm" />
 </template>
 
 <script setup lang="ts">
-  import { ref, reactive, computed, onMounted } from 'vue';
-  import { Search, Refresh, Plus } from '@element-plus/icons-vue';
-  import { ElMessage, ElMessageBox } from 'element-plus';
-  import { getDictList, addDict, updateDict, deleteDict, type DictItem } from '@/api/dict';
+import { onMounted, ref } from 'vue';
+import { ElMessage } from 'element-plus';
+import { WarningFilled } from '@element-plus/icons-vue';
+import { PERMS } from '@/constants/permissions';
+import OpPopSwitch from '@/components/OpPopSwitch.vue';
+import StatusTag from '@/components/StatusTag.vue';
+import { PAGE_SIZES, PAGINATION_LAYOUT } from '@/config';
+import { getDictCategoryList, updateDict, type DictCategory } from '@/api/dict';
+import { useElTableAutoMaxHeight } from '@/hooks/useElTableAutoMaxHeight';
+import DictFormDialog from './components/DictFormDialog.vue';
+import { useDictList } from './useDictList';
+import { useDictForm } from './useDictForm';
+import { useRouter } from 'vue-router';
 
-  const loading = ref(false);
-  const list = ref<DictItem[]>([]);
-  const dialogVisible = ref(false);
-  const dialogTitle = ref('');
-  const submitLoading = ref(false);
-  const formRef = ref();
+const pageCardRef = ref<HTMLElement | null>(null);
+const tableTopRef = ref<HTMLElement | null>(null);
+const paginationRef = ref<HTMLElement | null>(null);
+const { tableMaxHeight } = useElTableAutoMaxHeight({
+  containerRef: pageCardRef,
+  subtractRefs: [tableTopRef, paginationRef],
+  extraOffset: 24
+});
 
-  const queryParams = reactive({
-    dictName: '',
-    dictType: ''
-  });
+const {
+  loading,
+  tableData,
+  total,
+  queryParams,
+  fetchData,
+  handleSearch,
+  resetQuery,
+  calculateIndex
+} = useDictList();
 
-  const form = reactive<Partial<DictItem>>({
-    id: undefined,
-    dictName: '',
-    dictType: '',
-    status: 1,
-    remark: ''
-  });
+const {
+  dialogVisible,
+  dialogTitle,
+  form,
+  rules,
+  submitLoading,
+  handleAdd,
+  handleEdit,
+  submitForm,
+  handleDelete
+} = useDictForm(fetchData);
 
-  const rules = {
-    dictName: [{ required: true, message: '请输入字典名称', trigger: 'blur' }],
-    dictType: [{ required: true, message: '请输入字典类型', trigger: 'blur' }]
-  };
+const router = useRouter();
+const categories = ref<DictCategory[]>([]);
+onMounted(async () => {
+  try {
+    categories.value = (await getDictCategoryList()) || [];
+  } catch {
+    categories.value = [];
+  }
+});
 
-  const filteredList = computed(() => {
-    let data = list.value;
-    if (queryParams.dictName?.trim()) {
-      const n = queryParams.dictName.trim().toLowerCase();
-      data = data.filter(
-        (item) =>
-          (item.dictName || '').toLowerCase().includes(n) ||
-          (item.dictType || '').toLowerCase().includes(n)
-      );
-    }
-    if (queryParams.dictType?.trim()) {
-      const t = queryParams.dictType.trim().toLowerCase();
-      data = data.filter((item) => (item.dictType || '').toLowerCase().includes(t));
-    }
-    return data;
-  });
+const dictToggleTitle = (row: any) => {
+  const actionText = row?.status === 1 ? '禁用' : '启用';
+  const name = String(row?.name || '').trim();
+  const extra = name ? `字典「${name}」` : '该字典';
+  return `确认${actionText}${extra}吗？`;
+};
 
-  const fetchList = async () => {
-    loading.value = true;
-    try {
-      const data = await getDictList();
-      list.value = data || [];
-    } finally {
-      loading.value = false;
-    }
-  };
+const toggleStatus = async (row: any, nextEnabled: boolean) => {
+  if (row?.id == null) return;
+  const prevStatus = row.status;
+  const nextStatus = nextEnabled ? 1 : 0;
+  row.status = nextStatus;
+  try {
+    await updateDict(row.id, { status: nextStatus });
+    ElMessage.success(`${nextEnabled ? '启用' : '禁用'}成功`);
+    await fetchData();
+  } catch (e) {
+    row.status = prevStatus;
+    ElMessage.error('操作失败，请稍后重试');
+    throw e;
+  }
+};
 
-  const handleQuery = () => fetchList();
-  const resetQuery = () => {
-    queryParams.dictName = '';
-    queryParams.dictType = '';
-    handleQuery();
-  };
-
-  const handleAdd = () => {
-    dialogTitle.value = '新增字典';
-    Object.assign(form, { id: undefined, dictName: '', dictType: '', status: 1, remark: '' });
-    dialogVisible.value = true;
-  };
-
-  const handleEdit = (row: DictItem) => {
-    dialogTitle.value = '修改字典';
-    Object.assign(form, { ...row });
-    dialogVisible.value = true;
-  };
-
-  const submitForm = async () => {
-    try {
-      await formRef.value?.validate();
-    } catch {
-      return;
-    }
-    submitLoading.value = true;
-    try {
-      if (form.id != null) {
-        await updateDict(form.id, {
-          dictName: form.dictName!,
-          dictType: form.dictType!,
-          status: form.status,
-          remark: form.remark
-        });
-      } else {
-        await addDict({
-          dictName: form.dictName!,
-          dictType: form.dictType!,
-          status: form.status ?? 1,
-          remark: form.remark
-        });
-      }
-      ElMessage.success('操作成功');
-      dialogVisible.value = false;
-      fetchList();
-    } finally {
-      submitLoading.value = false;
-    }
-  };
-
-  const handleDelete = (row: DictItem) => {
-    ElMessageBox.confirm(`确认删除字典 "${row.dictName}" 吗？`, '警告')
-      .then(async () => {
-        await deleteDict(row.id!);
-        ElMessage.success('删除成功');
-        fetchList();
-      })
-      .catch(() => {});
-  };
-
-  onMounted(() => {
-    fetchList();
-  });
+const goCategory = () => {
+  router.push('/system/settings/dictCategory');
+};
 </script>
 
-<style scoped>
-  .app-container {
-    padding: 20px;
-  }
-  .search-wrapper {
-    margin-bottom: 20px;
-  }
-  .table-header {
-    display: flex;
-    justify-content: flex-start;
-    gap: 10px;
-  }
-</style>
+<style scoped></style>

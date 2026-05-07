@@ -1,45 +1,84 @@
 <template>
   <div class="app-main">
-    <router-view v-slot="{ Component, route }">
-      <transition name="fade-transform">
-        <component :is="Component" :key="route.path" />
-      </transition>
-    </router-view>
+    <div class="app-main__content">
+      <router-view v-slot="{ Component, route }">
+        <transition name="fade-transform">
+          <component :is="Component" :key="route.path" />
+        </transition>
+      </router-view>
+    </div>
     <div id="sub-app-container"></div>
+    <ModifyPassword ref="modifyPwdRef" />
   </div>
 </template>
 
-<script setup lang="ts"></script>
+<script setup lang="ts">
+  import { onMounted, onUnmounted, ref } from 'vue';
+  import ModifyPassword from '@/components/ModifyPassword.vue';
+
+  const modifyPwdRef = ref<InstanceType<typeof ModifyPassword>>();
+
+  const EVENT_NAME = 'open-modify-password';
+
+  const handleOpen = () => {
+    modifyPwdRef.value?.open();
+  };
+
+  onMounted(() => {
+    window.addEventListener(EVENT_NAME, handleOpen as EventListener);
+  });
+
+  onUnmounted(() => {
+    window.removeEventListener(EVENT_NAME, handleOpen as EventListener);
+  });
+</script>
 
 <style scoped lang="scss">
   .app-main {
+    &::-webkit-scrollbar {
+      width: 0;
+      height: 0;
+    }
+
+    /* Firefox */
+    scrollbar-width: none;
+    /* IE / old Edge */
+    -ms-overflow-style: none;
+
     flex: 1;
-    padding: 20px;
     overflow-y: auto;
     overflow-x: hidden;
     position: relative;
-    background-color: var(--el-bg-color-page);
+    background-color: transparent;
+  }
+
+  .app-main__content {
+    min-height: 0%;
+    position: relative;
   }
 
   /* ================== 1. 主应用原生页面的过渡动画 ================== */
 
-  /* 离开动画：立即执行，耗时 0.3s。绝对定位使其悬空，不把新页面挤下去 */
+  /* 离开动画：绝对定位铺满容器，避免脱离文档流时右侧区域塌陷缩小 */
   .fade-transform-leave-active {
     position: absolute;
-    top: 20px;
-    left: 20px;
-    right: 20px;
-    transition: opacity 0.3s ease;
+    inset: 0;
+    transition: opacity 0.2s ease;
   }
 
-  /* 等待旧页面的 0.3s 消失动画彻底播完后，新页面才开始淡入 */
+  /* 新页面较快淡入，减少空白卡顿感 */
   .fade-transform-enter-active {
-    transition: opacity 0.3s ease 0.3s;
+    transition: opacity 0.2s ease 0.3s;
   }
 
   .fade-transform-enter-from,
   .fade-transform-leave-to {
     opacity: 0;
+  }
+
+  #sub-app-container {
+    flex: 1;
+    overflow: hidden;
   }
 
   /* ================== 2. 乾坤子应用动画 ================== */
@@ -53,6 +92,7 @@
     0% {
       opacity: 0;
     }
+
     100% {
       opacity: 1;
     }

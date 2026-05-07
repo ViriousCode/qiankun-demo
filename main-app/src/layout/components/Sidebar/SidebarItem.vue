@@ -1,36 +1,85 @@
 <template>
   <template v-if="!item.meta?.hidden">
     <el-menu-item
-      v-if="!item.children || item.children.length === 0"
+      v-if="!canExpand"
       :index="resolvePath(item.path)"
+      :class="[`menu-level-${level}`, { 'root-active': isRootActive }]"
     >
-      <MenuIcon v-if="item.meta?.icon" :icon="item.meta?.icon" />
+      <MenuIcon v-if="showIcon" :icon="item.meta?.icon" />
       <template #title>
-        <span>{{ item.meta?.title }}</span>
+        <span :class="{ 'menu-title-with-icon': showIcon && !isCollapse }">
+          {{ item.meta?.title }}
+        </span>
       </template>
     </el-menu-item>
 
-    <el-sub-menu v-else :index="resolvePath(item.path)">
+    <el-sub-menu
+      v-else
+      :index="resolvePath(item.path)"
+      :class="[`menu-level-${level}`, { 'root-active': isRootActive }]"
+      :popper-class="submenuPopperClass"
+      :popper-offset="submenuPopperOffset"
+      :teleported="isCollapse ? true : undefined"
+    >
       <template #title>
-        <MenuIcon v-if="item.meta?.icon" :icon="item.meta?.icon" />
-        <span>{{ item.meta?.title }}</span>
+        <MenuIcon v-if="showIcon" :icon="item.meta?.icon" />
+        <span :class="{ 'menu-title-with-icon': showIcon && !isCollapse }">
+          {{ item.meta?.title }}
+        </span>
       </template>
       <sidebar-item
         v-for="child in item.children"
         :key="child.path"
         :item="child"
         :base-path="resolvePath(item.path)"
+        :level="level + 1"
+        :is-collapse="isCollapse"
+        :active-root-key="activeRootKey"
       />
     </el-sub-menu>
   </template>
 </template>
 <script setup lang="ts">
+  import { computed } from 'vue';
   import type { RouteRecordRaw } from 'vue-router';
+  import MenuIcon from '@/components/MenuIcon.vue';
 
-  const props = defineProps<{
-    item: RouteRecordRaw | any;
-    basePath?: string;
-  }>();
+  const props = withDefaults(
+    defineProps<{
+      item: RouteRecordRaw | any;
+      basePath?: string;
+      level?: number;
+      isCollapse?: boolean;
+      activeRootKey?: string;
+    }>(),
+    {
+      level: 1,
+      isCollapse: false,
+      activeRootKey: ''
+    }
+  );
+
+  const canExpand = computed(() => {
+    return props.item?.type === 'directory' && !!props.item?.children?.length;
+  });
+
+  const showIcon = computed(() => props.level === 1 && !!props.item?.meta?.icon);
+  const getMenuKey = (menu: any): string => {
+    const p = String(menu?.path || '').trim();
+    const normalized = p ? (p.startsWith('/') ? p : `/${p}`).replace(/\/+$/, '') : '';
+    return normalized || String(menu?.meta?.title || '');
+  };
+  const isRootActive = computed(
+    () => props.isCollapse && props.level === 1 && props.activeRootKey === getMenuKey(props.item)
+  );
+  const submenuPopperClass = computed(() => {
+    if (!props.isCollapse) return '';
+    return `sidebar-collapse-popper sidebar-collapse-popper-level-${props.level}`;
+  });
+  const submenuPopperOffset = computed(() => {
+    if (!props.isCollapse) return undefined;
+    return props.level === 1 ? 16 : 8;
+  });
 
   // 优化后的路径解析函数
   const resolvePath = (routePath?: string) => {
@@ -60,3 +109,9 @@
     return `${parentPath}/${routePath}`.replace(/\/+/g, '/');
   };
 </script>
+
+<style scoped>
+  .menu-title-with-icon {
+    margin-left: 8px;
+  }
+</style>

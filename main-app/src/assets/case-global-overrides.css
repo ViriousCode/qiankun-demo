@@ -1,0 +1,346 @@
+/* Global overrides to align UI with station-management styles. */
+
+/* Station management page sets only table header background/color. */
+.el-table {
+  /* Element Plus table header CSS variables (best-effort). */
+  --el-table-header-bg-color: #f6f8fc;
+  --el-table-header-text-color: #667085;
+}
+
+.el-table__header,
+.el-table__header-wrapper {
+  background-color: #f6f8fc !important;
+}
+
+.el-table__header th,
+.el-table__header th.el-table__cell,
+.el-table__header-wrapper th.el-table__cell,
+.el-table thead th.el-table__cell {
+  background-color: #f6f8fc !important;
+  background: #f6f8fc !important;
+  color: #667085 !important;
+  font-weight: 500 !important;
+}
+
+/* Remove "black border" focus styles on click (Element Plus + browser focus ring) */
+.el-button:focus,
+.el-button:focus-visible,
+.el-button.is-focus,
+.el-button:active:focus,
+.el-button:active:focus-visible,
+.el-button.is-link:focus,
+.el-button.is-link:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.el-input__wrapper.is-focus,
+.el-select__wrapper.is-focus,
+.el-date-editor.el-input__wrapper.is-focus,
+.el-date-editor.el-range-editor.is-focus {
+  box-shadow: 0 0 0 1px var(--el-color-primary) inset !important;
+  outline: none !important;
+}
+
+/* Keep only outer wrapper highlight, avoid inner extra border */
+.el-input__inner:focus,
+.el-textarea__inner:focus {
+  outline: none !important;
+}
+
+.el-input__wrapper:focus-within,
+.el-select__wrapper:focus-within,
+.el-date-editor.el-input__wrapper:focus-within,
+.el-date-editor.el-range-editor:focus-within {
+  box-shadow: 0 0 0 1px var(--el-color-primary) inset !important;
+}
+
+/* Dialog close button + generic focus-visible ring */
+button:focus-visible,
+[role='button']:focus-visible,
+.el-dialog__headerbtn:focus,
+.el-dialog__headerbtn:focus-visible,
+.el-dialog__close:focus,
+.el-dialog__close:focus-visible,
+.el-icon:focus,
+.el-icon:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Overlay-specific (Element Plus dialog/drawer/popover) */
+.el-overlay button:focus-visible,
+.el-overlay [role='button']:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Popconfirm icon aligns with first line text */
+.el-popconfirm__main {
+  align-items: flex-start !important;
+}
+
+.el-popconfirm__icon {
+  align-self: flex-start !important;
+  margin-top: 2px !important;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Element Plus Dialog — 规范：最小 480 / 中等 600 / 较大 800                  */
+/* 通用：内容区左右 24px；顶到标题 20px；标题行 24px；标题到正文 20px；        */
+/* 底部：页脚区下沿距弹窗底 20px；页脚按钮右对齐。                            */
+/* 页脚区高度：480 宽 → 54px；≥600（含 600/800 等）→ 60px                     */
+/* 需在 el-dialog 上使用 width="480px"|"600px"|"800px"，或加 .case-dialog-*   */
+/* -------------------------------------------------------------------------- */
+
+.el-overlay-dialog .el-dialog {
+  --el-dialog-padding-primary: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.el-overlay-dialog .el-dialog__header {
+  padding: 20px 56px 20px 24px;
+  margin: 0;
+  box-sizing: border-box;
+  border-bottom: 1px solid rgba(229, 229, 229, 1);
+}
+
+.el-overlay-dialog .el-dialog__header.show-close {
+  padding-right: 72px;
+}
+
+.el-overlay-dialog .el-dialog__title {
+  font-family:
+    PingFangSC,
+    PingFang SC;
+  font-weight: 500;
+  font-size: 16px;
+  color: #111111;
+  line-height: 22px;
+  text-align: left;
+  font-style: normal;
+}
+
+/* 关闭按钮距离弹窗右侧 24px */
+.el-overlay-dialog .el-dialog__headerbtn {
+  width: 16px;
+  height: 16px;
+  right: 24px;
+  top: 20px;
+}
+
+.el-overlay-dialog .el-dialog__body {
+  padding: 28px 77px 20px 63px;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+.el-overlay-dialog .el-dialog[style*='480px'] .el-dialog__body {
+  padding: 18px 24px 30px 24px;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+.el-overlay-dialog .el-dialog__footer {
+  box-sizing: border-box;
+  padding: 0 24px 20px;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  min-height: 60px;
+}
+
+.el-overlay-dialog .el-dialog[style*='480px'] .el-dialog__footer {
+  min-height: 54px;
+}
+
+.el-overlay-dialog .el-dialog.el-dialog--center .el-dialog__footer {
+  justify-content: flex-end;
+  text-align: right;
+}
+
+.el-overlay-dialog .el-dialog.is-fullscreen .el-dialog__footer {
+  min-height: unset;
+}
+
+/* 标准宽度（可选）：<el-dialog class="case-dialog-sm" ... /> */
+.el-overlay-dialog .el-dialog.case-dialog-sm {
+  width: 480px;
+  max-width: calc(100vw - 32px);
+}
+
+.el-overlay-dialog .el-dialog.case-dialog-sm .el-dialog__footer {
+  min-height: 54px;
+}
+
+.el-overlay-dialog .el-dialog.case-dialog-md {
+  width: 600px;
+  max-width: calc(100vw - 32px);
+}
+
+.el-overlay-dialog .el-dialog.case-dialog-lg {
+  width: 1352px;
+  max-width: calc(100vw - 32px);
+}
+
+.el-overlay-dialog .el-dialog.case-dialog-md .el-dialog__footer,
+.el-overlay-dialog .el-dialog.case-dialog-lg .el-dialog__footer {
+  min-height: 60px;
+}
+
+/* -------------------------------------------------------------------------- */
+/* 弹窗内表单：标签在控件上方；必填 * 在标签文字右侧（约 28px：行高 22 + 间距 6） */
+/* -------------------------------------------------------------------------- */
+
+.el-form-item--default {
+  margin-bottom: 20px;
+}
+
+.el-overlay-dialog .el-form:not(.el-form--inline) .el-form-item.el-form-item--label-right,
+.el-overlay-dialog .el-form:not(.el-form--inline) .el-form-item.el-form-item--label-left {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.el-overlay-dialog
+  .el-form:not(.el-form--inline)
+  .el-form-item.el-form-item--label-right
+  .el-form-item__label-wrap,
+.el-overlay-dialog
+  .el-form:not(.el-form--inline)
+  .el-form-item.el-form-item--label-left
+  .el-form-item__label-wrap {
+  align-self: flex-start;
+  max-width: 100%;
+}
+
+.el-overlay-dialog
+  .el-form:not(.el-form--inline)
+  .el-form-item.el-form-item--label-right
+  .el-form-item__label,
+.el-overlay-dialog
+  .el-form:not(.el-form--inline)
+  .el-form-item.el-form-item--label-left
+  .el-form-item__label {
+  display: block !important;
+  height: auto !important;
+  min-height: 0 !important;
+  margin-bottom: 8px !important;
+  padding: 0 !important;
+  width: fit-content !important;
+  max-width: 100% !important;
+  font-family:
+    PingFangSC,
+    PingFang SC;
+  font-weight: 400;
+  font-size: 14px;
+  color: #333333;
+  line-height: 22px;
+  text-align: left;
+  font-style: normal;
+  text-transform: none;
+}
+
+/* 覆盖 Element Plus 默认 asterisk-left：星号改到标签文字后 */
+.el-overlay-dialog
+  .el-form-item.is-required:not(.is-no-asterisk).asterisk-left
+  > .el-form-item__label-wrap
+  > .el-form-item__label::before,
+.el-overlay-dialog
+  .el-form-item.is-required:not(.is-no-asterisk).asterisk-left
+  > .el-form-item__label::before {
+  content: none !important;
+  margin: 0 !important;
+}
+
+.el-overlay-dialog
+  .el-form-item.is-required:not(.is-no-asterisk).asterisk-left
+  > .el-form-item__label-wrap
+  > .el-form-item__label::after,
+.el-overlay-dialog
+  .el-form-item.is-required:not(.is-no-asterisk).asterisk-left
+  > .el-form-item__label::after {
+  color: var(--el-color-danger);
+  content: '*';
+  margin-left: 5px;
+}
+
+.el-dialog .el-form-item--default .el-form-item__content {
+  > .el-input {
+    height: auto;
+    margin-top: 0px;
+  }
+  > .el-switch {
+    height: auto;
+    margin-top: 12px;
+    margin-bottom: 4px;
+  }
+  .el-checkbox {
+    height: auto;
+    margin-top: 5px;
+    margin-right: 24px;
+    margin-bottom: 18px;
+  }
+  .el-checkbox-group {
+    margin-bottom: -14px;
+  }
+  .el-radio {
+    height: auto;
+    margin-right: 24px;
+    margin-top: 5px;
+    .el-radio__label {
+      line-height: 1;
+    }
+  }
+  .el-radio-group {
+    height: auto;
+    margin-bottom: 4px;
+  }
+  .el-slider {
+    margin-top: 9px;
+  }
+}
+
+.is-message-box .el-overlay-message-box {
+  position: absolute;
+}
+
+.el-tag {
+  height: 20px !important;
+  padding: 0 8px !important;
+  border-radius: 11px !important;
+  display: inline-flex;
+  align-items: center;
+  min-width: 47px;
+}
+
+.message-drawer-wrapper {
+  .el-drawer__header {
+    padding: 27px 0 0 25px;
+    margin: 0;
+    .el-drawer__title {
+      font-family:
+        PingFangSC,
+        PingFang SC;
+      font-weight: 600;
+      font-size: 16px;
+      color: #444444;
+      line-height: 22px;
+      text-align: left;
+      font-style: normal;
+      margin: 0;
+    }
+    .el-drawer__close-btn {
+      padding: 0;
+      margin-right: 35px;
+    }
+  }
+
+  .el-drawer__body {
+    padding: 0 25px;
+  }
+}

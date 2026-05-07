@@ -1,38 +1,40 @@
 <template>
-  <div class="settings-container">
-    <el-tabs v-model="activeTab" tab-position="left" class="settings-tabs">
-      <el-tab-pane label="基础设置" name="basic">
-        <div class="tab-header">
-          <h2>基础设置</h2>
-          <p class="desc">管理系统的名称、Logo及全局展示风格</p>
-        </div>
+  <div class="page-container">
+    <h2 class="page-title">系统设置</h2>
+    <div class="page-card">
+      <div class="settings-container">
+        <el-tabs v-model="activeTab" tab-position="left" class="settings-tabs">
+          <el-tab-pane label="基础设置" name="basic">
+            <div class="tab-header">
+              <h2>基础设置</h2>
+              <p class="desc">管理系统的名称、Logo及全局展示风格</p>
+            </div>
 
-        <el-form label-width="100px" style="max-width: 600px" @submit.prevent>
-          <el-form-item label="系统名称">
-            <el-input v-model="basicForm.systemName" placeholder="请输入系统名称" />
-          </el-form-item>
+            <el-form label-width="100px" style="max-width: 600px" @submit.prevent>
+              <el-form-item label="系统名称">
+                <el-input v-model="basicForm.systemName" placeholder="请输入系统名称" />
+              </el-form-item>
 
-          <el-form-item label="系统 Logo">
-            <el-upload
-              class="logo-uploader"
-              :show-file-list="false"
-              :http-request="handleLogoUpload"
-              accept="image/jpeg,image/png,image/svg+xml"
-            >
-              <img v-if="logoDisplayUrl" :src="logoDisplayUrl" class="logo-img" />
-              <el-icon v-else class="logo-uploader-icon"><Plus /></el-icon>
-            </el-upload>
-            <div class="form-tip">建议尺寸 120x120px，支持 jpg、png、svg 格式</div>
-          </el-form-item>
+              <el-form-item label="系统 Logo">
+                <el-upload
+                  class="logo-uploader"
+                  :show-file-list="false"
+                  :http-request="handleLogoUpload"
+                  accept="image/jpeg,image/png,image/svg+xml"
+                >
+                  <img v-if="logoDisplayUrl" :src="logoDisplayUrl" class="logo-img" />
+                  <el-icon v-else class="logo-uploader-icon">
+                    <Plus />
+                  </el-icon>
+                </el-upload>
+                <div class="form-tip">建议尺寸 120x120px，支持 jpg、png、svg 格式</div>
+              </el-form-item>
 
-          <el-form-item label="默认主题色">
-            <el-color-picker
-              v-model="basicForm.themeColor"
-              :predefine="predefineColors"
-            />
-          </el-form-item>
+              <el-form-item label="默认主题色">
+                <el-color-picker v-model="basicForm.themeColor" :predefine="predefineColors" />
+              </el-form-item>
 
-          <!-- <el-form-item label="导航布局">
+              <!-- <el-form-item label="导航布局">
             <el-radio-group v-model="basicForm.layout">
               <el-radio value="side">左侧菜单</el-radio>
               <el-radio value="top">顶部菜单</el-radio>
@@ -40,52 +42,66 @@
             </el-radio-group>
           </el-form-item> -->
 
-          <el-form-item>
-            <el-button type="primary" @click="saveBasicSettings">保存更改</el-button>
-          </el-form-item>
-        </el-form>
-      </el-tab-pane>
+              <el-form-item>
+                <el-button
+                  type="primary"
+                  v-permission="PERMS.BASIC.SAVE"
+                  @click="saveBasicSettings"
+                >
+                  保存更改
+                </el-button>
+              </el-form-item>
+            </el-form>
+          </el-tab-pane>
 
-      <el-tab-pane label="安全策略" name="security">
-        <div class="tab-header">
-          <h2>安全与密码策略</h2>
-          <p class="desc">设置系统用户的密码复杂度及账号安全规则</p>
-        </div>
+          <el-tab-pane label="安全策略" name="security">
+            <div class="tab-header">
+              <h2>安全与密码策略</h2>
+              <p class="desc">设置系统用户的密码复杂度及账号安全规则</p>
+            </div>
 
-        <el-form label-width="140px" style="max-width: 600px" @submit.prevent>
-          <el-form-item label="初始默认密码">
-            <el-input v-model="securityForm.defaultPassword" type="password" show-password />
-          </el-form-item>
+            <el-form label-width="140px" style="max-width: 600px" @submit.prevent>
+              <el-form-item label="初始默认密码">
+                <el-input v-model="securityForm.defaultPassword" type="password" show-password />
+              </el-form-item>
 
-          <el-form-item label="最小密码长度">
-            <el-input-number v-model="securityForm.minLength" :min="6" :max="32" />
-          </el-form-item>
+              <el-form-item label="最小密码长度">
+                <el-input-number v-model="securityForm.minLength" :min="6" :max="32" />
+              </el-form-item>
 
-          <el-form-item label="密码复杂度要求">
-            <el-checkbox-group v-model="securityForm.complexity">
-              <el-checkbox value="uppercase">大写字母</el-checkbox>
-              <el-checkbox value="lowercase">小写字母</el-checkbox>
-              <el-checkbox value="number">数字</el-checkbox>
-              <el-checkbox value="special">特殊字符</el-checkbox>
-            </el-checkbox-group>
-          </el-form-item>
+              <el-form-item label="密码复杂度要求">
+                <el-checkbox-group v-model="securityForm.complexity">
+                  <el-checkbox value="uppercase">大写字母</el-checkbox>
+                  <el-checkbox value="lowercase">小写字母</el-checkbox>
+                  <el-checkbox value="number">数字</el-checkbox>
+                  <el-checkbox value="special">特殊字符</el-checkbox>
+                </el-checkbox-group>
+              </el-form-item>
 
-          <el-form-item label="密码过期时间(天)">
-            <el-input-number v-model="securityForm.expireDays" :min="0" :max="365" />
-            <div class="form-tip">设为 0 表示密码永不过期</div>
-          </el-form-item>
+              <el-form-item label="密码过期时间(天)">
+                <el-input-number v-model="securityForm.expireDays" :min="0" :max="365" />
+                <div class="form-tip">设为 0 表示密码永不过期</div>
+              </el-form-item>
 
-          <el-form-item label="最大登录失败次数">
-            <el-input-number v-model="securityForm.maxFailures" :min="3" :max="10" />
-            <div class="form-tip">超过次数后账号将自动锁定 30 分钟</div>
-          </el-form-item>
+              <el-form-item label="最大登录失败次数">
+                <el-input-number v-model="securityForm.maxFailures" :min="3" :max="10" />
+                <div class="form-tip">超过次数后账号将自动锁定 30 分钟</div>
+              </el-form-item>
 
-          <el-form-item>
-            <el-button type="primary" @click="saveSecuritySettings">保存策略</el-button>
-          </el-form-item>
-        </el-form>
-      </el-tab-pane>
-    </el-tabs>
+              <el-form-item>
+                <el-button
+                  type="primary"
+                  v-permission="PERMS.SECURITY.SAVE"
+                  @click="saveSecuritySettings"
+                >
+                  保存策略
+                </el-button>
+              </el-form-item>
+            </el-form>
+          </el-tab-pane>
+        </el-tabs>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -103,6 +119,7 @@
     type BasicConfig,
     type SecurityConfig
   } from '@/api/settings';
+  import { PERMS } from '@/constants/permissions';
 
   const activeTab = ref('basic');
   const loading = ref(false);

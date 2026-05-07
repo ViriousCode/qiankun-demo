@@ -6,7 +6,7 @@ export interface WorkbenchItem {
   id?: number;
   title: string; // 显示名称，如 "测试列表"
   category: string; // 分类
-  icon: string; // 图标，如 "List", "Link"
+  iconName: string; // 图标，如 "List", "Link"
   targetType: 'internal' | 'external'; // 跳转类型：internal(内部子应用) 或 external(外部链接)
   path: string; // 目标地址 (子应用路由或外部http链接)
   description?: string; // 描述信息

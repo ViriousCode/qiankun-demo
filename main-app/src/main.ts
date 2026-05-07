@@ -1,5 +1,6 @@
 import { createApp } from 'vue';
-import '@/assets/base.css';
+import '@/assets/base.scss';
+import '@npm/azura-icon/style.css';
 import App from './App.vue';
 
 import router from './router';
@@ -13,13 +14,20 @@ import { vPermission } from '@/directives/permission'; // 👈 1. 引入权限�
 
 import ElementPlus from 'element-plus';
 import 'element-plus/dist/index.css';
-import 'element-plus/theme-chalk/dark/css-vars.css';
+import '@/assets/case-global-overrides.css';
 import zhCn from 'element-plus/es/locale/lang/zh-cn';
 
 import { vDebounce } from '@/directives/debounce';
+import { MENU_ICONFONT_SYMBOL_JS_URL } from '@/config';
+import { loadIconfontSymbolScript } from '@/utils/loadIconfontSymbolScript';
 
-import '@/assets/iconfont/iconfont.css';
-import '@/assets/iconfont/iconfont';
+loadIconfontSymbolScript(MENU_ICONFONT_SYMBOL_JS_URL).catch((e) => {
+  console.warn(
+    '[iconfont] Symbol 脚本加载失败，icon-* 将无法通过 <use> 展示。请部署与 iconfont.json 同项目的 iconfont.js，并检查',
+    MENU_ICONFONT_SYMBOL_JS_URL,
+    e
+  );
+});
 
 const app = createApp(App);
 //----------------- pinia -----------------//

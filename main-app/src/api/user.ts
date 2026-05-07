@@ -7,11 +7,18 @@ export const loginApi = (data: { username: string; password: string }) => {
 
 // 获取用户信息接口
 interface UserInfo {
+  gender: string;
+  deptName: string;
   userName: string;
-  roleId: string;
+  roleId: string | number | null;
   roleKey: string;
   avatar?: string;
   nickName?: string;
+  tenantId?: number | null;
+  email?: string;
+  phone?: string;
+  roleNames?: string[];
+  orgPath?: string;
   permissions: string[];
 }
 export const getUserInfoApi = () => {

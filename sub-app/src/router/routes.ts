@@ -6,7 +6,6 @@ export const constantRoutes: RouteRecordRaw[] = [
     path: '/',
     name: 'LayoutRoot', // 必须叫这个名字，addRoute 要用
     component: () => import('@/layout/index.vue'), // 子应用的布局组件
-    redirect: '/test/list',
     children: [] // 初始为空
   },
   {

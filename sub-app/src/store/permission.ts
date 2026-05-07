@@ -18,13 +18,32 @@ export const usePermissionStore = defineStore('permission', () => {
   const isRoutesLoaded = ref(false);
   const APP_NAME = 'test';       // 对应后端菜单表里的 app 字段 (也是微应用的 name)
   const ACTIVE_RULE = '/test-sub-app';   // 对应微应用的 activeRule 路由前缀
+  const LEGACY_APP_PREFIX = `/${APP_NAME}`;
+
+  const normalizeInnerPath = (rawPath?: string) => {
+    let innerPath = String(rawPath || '').trim();
+    if (!innerPath) return '/';
+    if (innerPath.startsWith(ACTIVE_RULE)) {
+      innerPath = innerPath.slice(ACTIVE_RULE.length) || '/';
+    }
+    if (!innerPath.startsWith('/')) innerPath = `/${innerPath}`;
+    innerPath = innerPath.replace(/\/+/g, '/');
+    if (innerPath !== '/' && innerPath.endsWith('/')) {
+      innerPath = innerPath.slice(0, -1);
+    }
+    return innerPath;
+  };
 
   // 递归保留树形结构的菜单过滤算法
   const extractMyMenus = (tree: any[]): any[] => {
     const res: any[] = [];
     tree.forEach(item => {
       const isMyApp = item.app === APP_NAME;
-      const isMyPath = item.path && item.path.startsWith(ACTIVE_RULE);
+      const itemPath = String(item.path || '').trim();
+      const isMyPath =
+        (itemPath && itemPath.startsWith(ACTIVE_RULE)) ||
+        itemPath === LEGACY_APP_PREFIX ||
+        itemPath.startsWith(`${LEGACY_APP_PREFIX}/`);
 
       if (isMyApp || isMyPath) {
         // 情况 A: 当前节点命中（属于本应用）
@@ -55,11 +74,7 @@ export const usePermissionStore = defineStore('permission', () => {
       menuList.forEach(item => {
         if (item.type === 'button') return;
 
-        let innerPath = item.path || '';
-        if (innerPath.startsWith(ACTIVE_RULE)) {
-          innerPath = innerPath.replace(ACTIVE_RULE, '');
-        }
-        if (!innerPath.startsWith('/')) innerPath = '/' + innerPath;
+        const innerPath = normalizeInnerPath(item.path);
 
         const routeObj: any = {
           path: innerPath,
@@ -112,6 +127,9 @@ export const usePermissionStore = defineStore('permission', () => {
     generateFlatRoutes(menus.value);
 
     console.log('3. 最终成功挂载到 Router 的有效业务页面:', flatRoutes);
+    if (flatRoutes.length === 0) {
+      console.error('[子应用] 动态路由生成为空，请检查菜单 app/path 是否匹配当前子应用');
+    }
 
     flatRoutes.forEach(routeObj => {
       router.addRoute('LayoutRoot', routeObj);

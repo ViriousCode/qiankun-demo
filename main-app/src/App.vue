@@ -19,5 +19,7 @@
     margin: 0;
     padding: 0;
     height: 100%;
+    background: url('@/assets/image/background/bg_main_app.webp') no-repeat center center;
+    background-size: cover;
   }
 </style>

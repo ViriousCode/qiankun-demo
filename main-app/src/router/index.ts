@@ -13,42 +13,44 @@ const routes: RouteRecordRaw[] = [
     path: '/',
     component: Layout,
     name: 'Layout',
-    redirect: '/dashboard',
+    redirect: '/workbench',
     children: [
-      // {
-      //   path: 'dashboard',
-      //   name: 'Dashboard',
-      //   component: () => import('@/views/dashboard/index.vue'),
-      //   meta: { title: '控制台' }
-      // },
-      // {
-      //   path: 'system',
-      //   name: 'System',
-      //   meta: { title: '系统管理' },
-      //   // 可以选择使用空 Layout 或直接 Component: undefined (如果只是目录)
-      //   // 这里为了简单，假设它是一个嵌套路由的父级，不需要特定 Component
-      //   children: [
-      //     {
-      //       path: 'menu',
-      //       name: 'MenuManage',
-      //       component: () => import('@/views/system/menu/index.vue'),
-      //       meta: { title: '菜单管理' }
-      //     },
-      //     {
-      //       path: 'role',
-      //       name: 'RoleManage',
-      //       component: () => import('@/views/system/role/index.vue'),
-      //       meta: { title: '角色管理' }
-      //     },
-      //     {
-      //       path: 'app',
-      //       name: 'AppManage',
-      //       component: () => import('@/views/system/app/index.vue'),
-      //       meta: { title: '应用管理' }
-      //     }
-      //   ]
-      // },
-      // 子应用的路由不需要在这里配，那是 Layout 里的 activeRule 的事
+      {
+        path: '/profile/info',
+        name: 'ProfileInfo',
+        component: () => import('@/views/profile/info/index.vue'),
+        meta: { title: '个人中心', hidden: true }
+      },
+      {
+        path: '/profile/apps',
+        name: 'ProfileApps',
+        component: () => import('@/views/profile/apps/index.vue'),
+        meta: { title: '我的应用', hidden: true }
+      },
+      {
+        path: '/profile/todo',
+        name: 'ProfileTodo',
+        component: () => import('@/views/profile/todo/index.vue'),
+        meta: { title: '我的待办', hidden: true }
+      },
+      {
+        path: '/profile/message',
+        name: 'ProfileMessage',
+        component: () => import('@/views/profile/message/index.vue'),
+        meta: { title: '我的消息', hidden: true }
+      },
+      {
+        path: '/profile/message/detail',
+        name: 'ProfileMessageDetail',
+        component: () => import('@/views/profile/message/detail.vue'),
+        meta: { title: '消息详情', hidden: true }
+      },
+      {
+        path: '/profile/todo/detail',
+        name: 'ProfileTodoDetail',
+        component: () => import('@/views/profile/todo/detail.vue'),
+        meta: { title: '待办详情', hidden: true }
+      },
       {
         path: '/:pathMatch(.*)*',
         component: () => import('@/views/error/404.vue'), // 一个空的 <div /> 组件
@@ -64,7 +66,7 @@ const router = createRouter({
 });
 
 // 简单的路由守卫
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, _from, next) => {
   const userStore = useUserStore();
   const token = userStore.token;
 
@@ -84,8 +86,11 @@ router.beforeEach((to, from, next) => {
 });
 
 router.afterEach((to) => {
-  // 1. 判断是否进入了子应用路径 (假设子应用前缀是 /sub-app)
-  if (to.path.startsWith('/sub-app')) {
+  // 动态匹配微应用前缀：由权限/菜单加载时写入 window.__MICRO_ACTIVE_RULES__
+  // 避免在这里 import permissionStore 导致 router<->store 循环依赖
+  const prefixes = ((window as any).__MICRO_ACTIVE_RULES__ as string[]) || [];
+  const hit = prefixes.some((p) => to.path === p || to.path.startsWith(`${p}/`));
+  if (hit) {
     // 2. 派发自定义事件，携带最新的路径
     window.dispatchEvent(
       new CustomEvent('micro-app-route-change', {

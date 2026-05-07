@@ -1,200 +1,202 @@
 <template>
-  <div class="workbench-container" v-loading="loading">
-    <el-card class="box-card" shadow="never">
-      <template #header>
-        <div class="card-header">
-          <span class="title">我的工作台</span>
-          <el-button link type="primary" @click="router.push('/system/workbench')">
-            工作台管理
-          </el-button>
-        </div>
-      </template>
-
-      <div v-if="Object.keys(groupedApps).length > 0">
-        <div v-for="(items, category) in groupedApps" :key="category" class="category-section">
-          <div class="category-title">
-            <span class="marker"></span>
-            {{ category }}
-          </div>
-
-          <div class="app-grid">
-            <div v-for="item in items" :key="item.id" class="app-item" @click="handleJump(item)">
-              <div class="icon-box" :class="item.targetType">
-                <el-icon><component :is="item.icon" v-if="item.icon" /></el-icon>
-              </div>
-              <div class="info">
-                <h3 class="app-title">{{ item.title }}</h3>
-                <p class="app-desc" :title="item.description">
-                  {{ item.description || '暂无描述' }}
-                </p>
-              </div>
-              <div class="tag-corner">
-                <el-tag size="small" :type="item.targetType === 'external' ? 'warning' : 'success'">
-                  {{ item.targetType === 'external' ? '外链' : '内部' }}
-                </el-tag>
-              </div>
-            </div>
-          </div>
-        </div>
+  <div class="workbench-page" v-loading="loading">
+    <div class="workbench-row-top">
+      <div class="workbench-left-col">
+        <UserCard
+          :avatar-url="userAvatar"
+          :user-name="userStore.userInfo?.userName || '---'"
+          :dept-name="userStore.userInfo?.deptName || '---'"
+          :current-date-time="currentDateTime"
+          :week-day="weekDay"
+          :weather-text="weatherText"
+        />
+        <AppsCard
+          :apps="flatApps"
+          :placeholder-apps="placeholderApps"
+          @more-click="router.push('/system/app/platform')"
+          @app-click="handleJump"
+        />
       </div>
+      <NewsCard :news-list="newsList" />
+    </div>
 
-      <el-empty v-else description="暂无工作台应用，请联系管理员添加" />
-    </el-card>
+    <div class="workbench-row-bottom">
+      <TodoCard
+        class="todo-card"
+        v-model="todoActive"
+        :pending-count="todoPendingCount"
+        :done-count="todoDoneCount"
+        :todo-list="todoList"
+      />
+      <QuickEntryCard
+        :entries="quickEntries"
+        @config-click="onQuickEntryConfig"
+        @entry-click="onQuickEntryClick"
+      />
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
   import { ref, computed, onMounted } from 'vue';
   import { useRouter } from 'vue-router';
-  import { getWorkbenchList } from '@/api/workbench';
-  import type { WorkbenchItem } from '@/api/workbench';
-  import { ElMessage } from 'element-plus';
+  import { useUserStore } from '@/store/user';
+  import iconUserMale from '@/assets/image/workbench/icon_user_male.webp';
+  import iconUserFemale from '@/assets/image/workbench/icon_user_female.webp';
+  import { getSystemInfoList, type SystemInfo } from '@/api/systemInfo';
+  import { getLinkList } from '@/api/link';
+  import UserCard from './components/UserCard.vue';
+  import AppsCard from './components/AppsCard.vue';
+  import NewsCard from './components/NewsCard.vue';
+  import TodoCard from './components/TodoCard.vue';
+  import QuickEntryCard from './components/QuickEntryCard.vue';
+  import {
+    DEFAULT_NEWS_LIST,
+    DEFAULT_QUICK_ENTRIES,
+    DEFAULT_TODO_LIST,
+    DEFAULT_TODO_PENDING_COUNT,
+    DEFAULT_TODO_DONE_COUNT,
+    PLACEHOLDER_APP_NAMES
+  } from './constants';
+  import type { QuickEntry } from './components/QuickEntryCard.vue';
+  import { useWorkbenchTime } from './useWorkbenchTime';
+  import { useWorkbenchApps } from './useWorkbenchApps';
 
   const router = useRouter();
-  const loading = ref(false);
-  const rawList = ref<WorkbenchItem[]>([]);
+  const userStore = useUserStore();
 
-  // 获取工作台数据
-  const fetchData = async () => {
-    loading.value = true;
+  const { currentDateTime, weekDay, weatherText } = useWorkbenchTime();
+  const { loading, flatApps, handleJump } = useWorkbenchApps();
+
+  const userAvatar = computed(() =>
+    userStore.userInfo?.gender === 'male' ? iconUserMale : iconUserFemale
+  );
+
+  const todoActive = ref<'pending' | 'done'>('pending');
+  const todoPendingCount = ref(DEFAULT_TODO_PENDING_COUNT);
+  const todoDoneCount = ref(DEFAULT_TODO_DONE_COUNT);
+  const newsList = ref([...DEFAULT_NEWS_LIST]);
+  const quickEntries = ref<QuickEntry[]>([...DEFAULT_QUICK_ENTRIES]);
+  const todoList = ref([...DEFAULT_TODO_LIST]);
+
+  const placeholderApps = computed(() => PLACEHOLDER_APP_NAMES.map((name) => ({ name })));
+
+  const onQuickEntryConfig = () => {
+    router.push('/system/settings/links');
+  };
+
+  const onQuickEntryClick = (entry: QuickEntry) => {
+    if (entry.url) {
+      window.open(entry.url, '_blank');
+    }
+  };
+
+  const fetchQuickEntries = async () => {
     try {
-      const res = await getWorkbenchList();
-      rawList.value = res || [];
-    } catch (error) {
-      ElMessage.error('加载工作台数据失败');
-    } finally {
-      loading.value = false;
-    }
-  };
-
-  // 🚨 核心逻辑：将一维数组按 category 转换为分组对象
-  // 结果格式: { '常用应用': [...], '业务系统': [...] }
-  const groupedApps = computed(() => {
-    const groups: Record<string, WorkbenchItem[]> = {};
-    rawList.value.forEach((item) => {
-      const cat = item.category || '未分类';
-      if (!groups[cat]) {
-        groups[cat] = [];
+      const data = await getLinkList({ status: 1 });
+      const list = data || [];
+      if (list.length > 0) {
+        quickEntries.value = list.map((item) => ({
+          key: item.id,
+          name: item.name,
+          url: item.url
+        }));
       }
-      groups[cat].push(item);
-    });
-    return groups;
-  });
-
-  // 跳转逻辑保持不变
-  const handleJump = (item: WorkbenchItem) => {
-    if (!item.path) return ElMessage.warning('该应用未配置跳转路径');
-    if (item.targetType === 'external') {
-      const url = item.path.startsWith('http') ? item.path : `http://${item.path}`;
-      window.open(url, '_blank');
-    } else {
-      router.push(item.path);
+    } catch (_) {
+      // keep default
     }
   };
 
-  onMounted(() => fetchData());
+  const normalizeNewsDate = (item: SystemInfo) => {
+    const source = String(item.publishTime || item.updateTime || '').trim();
+    if (!source) return '';
+    const date = new Date(source);
+    if (!Number.isNaN(date.getTime())) {
+      const yyyy = date.getFullYear();
+      const mm = String(date.getMonth() + 1).padStart(2, '0');
+      const dd = String(date.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    }
+    return source.slice(0, 10);
+  };
+
+  const fetchWorkbenchNews = async () => {
+    try {
+      const res = await getSystemInfoList({
+        infoCategory: '环保资讯',
+        status: 1,
+        pageIndex: 1,
+        pageSize: 10
+      });
+      const list = res?.list ?? [];
+      newsList.value = list.map((item) => ({
+        title: item.title,
+        date: normalizeNewsDate(item)
+      }));
+      if (newsList.value.length === 0) {
+        newsList.value = [...DEFAULT_NEWS_LIST];
+      }
+    } catch (_) {
+      newsList.value = [...DEFAULT_NEWS_LIST];
+    }
+  };
+
+  onMounted(() => {
+    fetchWorkbenchNews();
+    fetchQuickEntries();
+  });
 </script>
 
-<style scoped>
-  .workbench-container {
-    padding: 20px;
-  }
-  .card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  .card-header .title {
-    font-size: 18px;
-    font-weight: bold;
-  }
+<style scoped lang="scss">
+  $breakpoint-narrow: 1599px;
 
-  /* 🚨 新增分类样式 */
-  .category-section {
-    margin-bottom: 30px;
-  }
-  .category-title {
-    font-size: 16px;
-    font-weight: 600;
-    color: #303133;
-    margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-  }
-  .category-title .marker {
-    display: inline-block;
-    width: 4px;
-    height: 16px;
-    background-color: #409eff;
-    border-radius: 2px;
-    margin-right: 8px;
-  }
-
-  /* 保持原有的网格和卡片样式 */
-  .app-grid {
+  .workbench-page {
+    padding: 28px 52px 20px 52px;
+    height: calc(100vh - 66px);
+    background: transparent;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    grid-template-rows: 527fr 419fr;
     gap: 20px;
-  }
-  .app-item {
-    position: relative;
-    display: flex;
-    align-items: center;
-    padding: 20px;
-    border: 1px solid #ebeef5;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    background-color: #fff;
-  }
-  .app-item:hover {
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
-    transform: translateY(-3px);
-    border-color: #c6e2ff;
-  }
-  .icon-box {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
-    font-size: 24px;
-    margin-right: 16px;
-    flex-shrink: 0;
-  }
-  .icon-box.internal {
-    background-color: #ecf5ff;
-    color: #409eff;
-  }
-  .icon-box.external {
-    background-color: #fdf6ec;
-    color: #e6a23c;
-  }
-  .info {
-    flex: 1;
-    min-width: 0;
-  }
-  .app-title {
-    margin: 0 0 8px 0;
-    font-size: 16px;
-    font-weight: 500;
-    color: #303133;
-    white-space: nowrap;
     overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .app-desc {
-    margin: 0;
-    font-size: 13px;
-    color: #909399;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .tag-corner {
-    position: absolute;
-    top: 10px;
-    right: 10px;
+
+    .workbench-row-top {
+      display: grid;
+      grid-template-columns: 1121fr 675fr;
+      gap: 20px;
+      flex: 1;
+      min-height: 0;
+
+      .workbench-left-col {
+        display: grid;
+        grid-template-rows: 163fr 344fr;
+        gap: 19px;
+        min-height: 0;
+      }
+    }
+
+    .workbench-row-bottom {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1121fr 675fr;
+      gap: 20px;
+      min-height: 280px;
+    }
+
+    /* 宽度小于 1920px 时改为单列 */
+    @media (max-width: $breakpoint-narrow) {
+      height: auto;
+      min-height: calc(100vh - 66px);
+      grid-template-rows: auto auto;
+      overflow: visible;
+
+      .workbench-row-top {
+        grid-template-columns: 1fr;
+      }
+
+      .workbench-row-bottom {
+        grid-template-columns: 1fr;
+        min-height: 0;
+      }
+    }
   }
 </style>
